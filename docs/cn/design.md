@@ -27,8 +27,10 @@ WordVoyage 采用 **两阶段责任链架构**，以 LLM 对话为核心，所�
 - **处理链 (Processing Chain)**：请求处理的核心通道，按顺序传递请求
 - **插件节点 (Plugin Node)**：链上的处理单元，每个节点实现特定功能
 - **LLM 核心 (LLM Core)**：链上的关键节点，负责与 OpenAI API 交互
-- **Context (上下文)**：包含游戏状态的可变数据结构，节点间通过修改 context 进行交互
-- **Event (事件)**：事件生成的最终产物，包含生成结果和对应的 context 快照
+- **Context (上下文)**：包含游戏状态的键值对字典，节点间通过修改 context 进行交互
+- **Event (事件)**：一段文本描述，表示在这段时间内沙盒世界发生的事情
+- **PreLogSummary (前文摘要)**：对历史事件的总结，用于为 LLM 生成下一个事件提供上下文
+- **Step (步骤)**：完整的游戏步骤，包含 Context + Event + PreLogSummary 三部分
 
 #### 2.1.3 节点接口
 
@@ -86,11 +88,11 @@ interface PluginNode {
 **工作流程：**
 用户输入 → 前端 → 处理链 → [预处理阶段节点] → [事件生成阶段节点] → 前端 → 用户界面
 
-- **预处理阶段**：准备LLM所需的所有上下文信息，包括输入处理、时间管理、状态加载等
-- **事件生成阶段**：以LLM核心节点为中心，生成游戏事件并将 context 快照与事件绑定
+- **预处理阶段**：准备LLM所需的所有上下文信息，包括输入处理、时间管理、状态加载、前文摘要生成等
+- **事件生成阶段**：以LLM核心节点为中心，根据 context 和 preLogSummary 生成游戏事件，并收集 context 变更
 - 预处理阶段包含多个独立插件节点，事件生成阶段主要由单个LLM核心节点完成
 - 请求按顺序通过各个节点处理，每个节点主要通过修改context传递信息
-- 责任链单并发处理，保证 context 一致性
+- 每个用户会话单并发处理，保证 context 一致性（单机程序，不考虑多用户）
 ### 2.2 前端架构
 - **核心框架**：React 18 + TypeScript
 - **构建工具**：Bun
@@ -102,8 +104,10 @@ interface PluginNode {
 - **核心框架**：Node.js (Express)
 - **构建工具**：Bun
 - **API 设计**：RESTful API
-- **数据库**：MongoDB（持久化存储） + Redis（缓存）
+- **数据库**：Redis（KV 存储，足以支撑所有存储需求）
+- **认证方式**：JWT + Session 混合模式
 - **LLM 集成**：OpenAI API 服务
+- **部署模式**：单机程序，不考虑多用户并发
 
 ## 3. 责任链式插件节点模块
 
@@ -117,18 +121,28 @@ WordVoyage 的所有功能通过处理链上的插件节点实现，每个节点
 前端请求 → [预处理阶段] → [事件生成阶段] → 前端响应
 
 预处理阶段：
-输入处理节点 → 时间管理节点 → 状态管理节点
+输入处理节点 → 时间管理节点 → 状态管理节点 → 前文摘要节点
 
 事件生成阶段：
-LLM核心节点（生成事件+绑定context快照）
+LLM核心节点（基于context+preLogSummary生成事件+context变更）
 ```
 
 ### 3.2 核心节点功能
 
+**预处理阶段节点：**
+
 - **输入处理节点 (InputProcessingNode)**：处理用户输入的分类与解析，识别输入类型（行动/思考、机制质疑）
-- **时间管理节点 (TimeManagementNode)**：管理游戏内时间，为LLM提供时间参数，根据事件持续时间计算结束时间
-- **状态管理节点 (StateManagementNode)**：管理游戏状态，加载当前游戏状态到 context
-- **LLM核心节点 (LLMCoreNode)**：与OpenAI API交互，生成事件响应，并将对应的 context 快照绑定到事件
+- **时间管理节点 (TimeManagementNode)**：计算当前游戏时间点，将其添加到context
+- **状态管理节点 (StateManagementNode)**：从Redis加载当前游戏状态到context
+- **前文摘要节点 (PreLogSummaryNode)**：根据历史Step生成PreLogSummary（全量摘要 + 最近N个事件）
+
+**事件生成阶段节点：**
+
+- **LLM核心节点 (LLMCoreNode)**：
+  - 基于 context + preLogSummary + 用户输入，调用OpenAI API
+  - 生成事件描述文本
+  - 生成context变更（仅包含变化的字段）
+  - 应用context变更，将完整Step存储到Redis
 
 ## 4. 责任链交互流程
 
@@ -139,27 +153,33 @@ LLM核心节点（生成事件+绑定context快照）
 ```
 1. 用户输入文字指令
 2. 前端发送请求到后端处理链
-3. **预处理阶段**：准备上下文信息
-   a. 输入处理节点：分类解析输入，识别类型并提取关键信息
-   b. 时间管理节点：添加当前时间点到context
-   c. 状态管理节点：加载当前游戏状态到context
+3. **预处理阶段**：准备LLM所需的信息
+   a. 输入处理节点：分类解析输入，识别类型（行动/思考、机制质疑）
+   b. 时间管理节点：计算当前游戏时间点
+   c. 状态管理节点：从Redis加载当前游戏状态到context
+   d. 前文摘要节点：根据历史事件生成PreLogSummary
 4. **事件生成阶段**：生成响应
-   a. LLM核心节点：调用OpenAI API生成事件
-      - 传递context（输入、时间、状态、生命体征、库存等）
-      - 根据输入类型生成对应结果（场景/事件、机制调整等）
-      - 包含事件持续时间（秒，整数）
-      - 将生成的事件与当前context快照绑定，保证原子性
+   a. LLM核心节点：
+      - 基于 context + preLogSummary + 用户输入，调用OpenAI API
+      - 生成事件描述文本（表示这段时间沙盒世界发生了什么）
+      - 生成context变更（仅包含变化的key-value对）
+      - 返回事件内容和context变更
+   b. Context更新和持久化：
+      - 应用context变更到当前context
+      - 将完整Step（context + event + preLogSummary）保存到Redis
+      - 事件流逝对应的游戏时间
 5. 响应沿处理链返回前端
-6. 前端展示结果，等待用户下一次输入
+6. 前端展示事件内容和更新后的context，等待用户下一次输入
 ```
 
 ### 4.2 机制质疑变体
 
 当用户质疑游戏机制时，处理流程的特殊之处在于：
 
-- 输入处理节点识别为"机制质疑"类型，提取用户的关注变更（如移除饥饿/口渴追踪）
-- LLM核心节点根据用户的机制调整要求，更新 context 中对应的追踪字段
-- 生成的事件反映了对游戏焦点的重新定义，后续事件生成不再受旧的追踪限制
+- 输入处理节点识别为"机制质疑"类型，提取用户对context字段的调整需求
+- LLM核心节点理解用户需求，生成对应的 context 变更指令（删除字段、添加字段等）
+- 如用户认为饥饿不重要，直接从 context 移除 hunger 字段
+- 生成的事件反映了对游戏焦点的重新定义，后续事件生成基于新的context结构
 
 ## 5. 背景故事与游戏流程
 
@@ -185,48 +205,94 @@ LLM核心节点（生成事件+绑定context快照）
 - 可通过科技延长寿命
 - 寿命耗尽后可重新开始游戏
 
-## 6. Context 一致性与事件溯源
+## 6. 数据模型与存储设计
 
 ### 6.1 核心设计原则
 
-- **事件-Context 绑定**：每个生成的事件都与对应的 context 快照绑定存储
-- **原子性保证**：事件生成和 context 变更作为一个原子操作，要么全部成功，要么全部失败
-- **单并发处理**：责任链同一时刻只处理一个请求，避免并发修改 context
-- **完整溯源**：可通过事件历史追溯任意时刻的 context 状态
+- **Step 原子性**：Context + Event + PreLogSummary 构成完整的游戏步骤，作为一个原子单元存储
+- **事件串行**：所有事件串行生成，每个事件生成完毕后时间即流逝
+- **会话单并发**：每个会话同一时刻只处理一个请求，避免并发修改 context
+- **完整溯源**：可通过 Step 历史追溯任意时刻的游戏状态（后续可用于存档、回溯等功能）
 
 ### 6.2 Context 数据结构
 
-Context 包含以下核心信息：
+Context 是一个键值对字典，存储游戏状态信息：
 
-- **游戏状态**：用户关注的动态追踪字段（如生命体征、库存、环境状态等）
-- **时间信息**：当前游戏时间点
-- **输入信息**：用户当前输入的原始内容和分类
-- **元数据**：事件ID、会话ID等辅助信息
+```typescript
+Context {
+  // 核心游戏状态字典
+  state: {
+    [key: string]: ContextField;
+  };
 
-**Context 限制：**
-- 追踪字段数量有上限（初期设定为报错，后续通过UI引导用户管理）
-- 不进行摘要压缩（保证事件生成质量）
+  // 游戏时间
+  gameTime: number;  // 游戏内时间戳（秒）
+}
 
-### 6.3 事件存储结构
-
-每个事件包含：
-
-```
-Event {
-  id: string;                    // 事件唯一标识
-  timestamp: number;             // 生成时间戳
-  userInput: string;             // 用户输入
-  generatedContent: string;      // LLM生成的事件内容
-  duration: number;              // 事件持续时间（秒）
-  contextSnapshot: Context;      // 绑定的context快照
+// Context 字段定义（精简结构）
+ContextField {
+  value: any;                    // 字段值（number, string, object 等）
+  type: 'number' | 'string' | 'object' | 'array';  // 值类型
+  description?: string;          // 字段语义描述（供 LLM 理解）
 }
 ```
 
-### 6.4 失败恢复机制
+**Context 限制：**
+- state 字典的 key 数量上限：可配置，默认 16
+- 超过上限时报错，引导用户通过机制质疑移除不重要的字段
+- 不对 context 进行摘要压缩（保证事件生成质量）
 
-- LLM API 调用失败时，不更新 context，向用户返回错误信息
-- 保留上一个成功事件的 context 状态
-- 用户可重试，责任链从预处理阶段重新开始
+### 6.3 PreLogSummary 结构
+
+PreLogSummary 是对历史事件的摘要，用于让 LLM 理解前文：
+
+```typescript
+PreLogSummary {
+  summary: string;               // 历史事件摘要文本
+  recentEvents: string[];        // 最近N个事件的完整文本（如最近3个）
+  generatedAt: number;           // 摘要生成时间戳
+}
+```
+
+### 6.4 Event 结构
+
+Event 是 LLM 生成的结果，包含事件描述和 context 变更：
+
+```typescript
+Event {
+  description: string;           // 事件描述文本（这段时间沙盒世界发生了什么）
+  contextChanges: {              // context 变更（仅包含变化的字段）
+    [key: string]: ContextField | null;  // null 表示删除该字段
+  };
+}
+```
+
+### 6.5 Step 存储结构
+
+Step 是完整的游戏步骤，作为一个原子单元存储到 Redis：
+
+```typescript
+Step {
+  id: string;                    // 步骤唯一标识
+  timestamp: number;             // 生成时间戳（真实时间）
+  userInput: string;             // 用户输入
+  inputType: 'action' | 'question';  // 输入类型（行动/思考、机制质疑）
+
+  // 完整的三元组
+  context: Context;              // 应用变更后的完整 context 快照
+  event: Event;                  // LLM 生成的事件
+  preLogSummary: PreLogSummary;  // 前文摘要
+}
+```
+
+### 6.6 错误处理机制
+
+- **不可恢复错误**：责任链中任何节点失败，立即中断处理链，返回错误
+  - LLM API 调用失败
+  - Redis 存储失败
+  - Context 字段数量超限
+- **错误恢复**：失败后不更新 context，保留上一个成功 Step 的状态
+- **重试机制**：用户可重试，责任链从预处理阶段重新开始
 
 ## 7. 技术选型建议
 
@@ -241,9 +307,9 @@ Event {
 ### 7.2 后端
 - **框架**：Node.js + Express.js
 - **工具链**：Bun (构建/包管理)
-- **数据库**：MongoDB (持久化) + Redis (缓存)
+- **数据库**：Redis（KV 存储）
+- **认证**：JWT + Session 混合模式
 - **LLM**：OpenAI API SDK
-- **认证**：JWT
 - **文档**：Swagger/OpenAPI
 
 ### 7.3 基础设施
@@ -270,14 +336,15 @@ Event {
 - 前后端基础架构搭建（Bun + React + Node.js）
 - 处理链核心引擎实现
 - 基础节点接口定义
-- 数据库集成（MongoDB + Redis）
-- 事件溯源机制实现（Event-Context 绑定）
-- LLM 核心节点实现
+- Redis KV 存储集成
+- Step 存储机制实现（Context + Event + PreLogSummary 三元组）
+- LLM 核心节点实现（结构化输出：事件描述 + context变更）
 
 ### 9.2 第二阶段（核心功能）
 - 输入处理、时间管理、状态管理节点开发
-- LLM核心节点功能完善（叙事生成、事件生成）
-- Context 一致性保障机制
+- 前文摘要节点实现（历史事件摘要生成）
+- LLM核心节点功能完善（叙事生成、context变更应用）
+- Context 字段数量限制（可配置，默认16）
 
 ### 9.3 第三阶段（功能完善）
 - 机制质疑功能实现（用户自定义关注点）
@@ -290,3 +357,33 @@ Event {
 - 多LLM协作探索
 - MOD系统探索
 - 跨平台适配
+
+## 10. 未来规划与后续工作
+
+### 10.1 性能与成本优化
+- 多个LLM协作，使用便宜LLM处理简单任务
+- 响应缓存策略，避免重复调用LLM
+- 前文摘要生成的优化（使用较小的LLM完成）
+
+### 10.2 用户体验增强
+- 流式响应（SSE），让用户看到逐字生成的事件
+- 响应延迟优化，提升交互流畅度
+- 历史回溯和分支探索功能（基于事件溯源）
+- Context 字段管理UI，提前引导用户避免超限
+
+### 10.3 安全性与合规
+- 输入内容过滤和长度限制
+- LLM 输出内容审核
+- 速率限制和防滥用机制
+- 数据隐私保护
+
+### 10.4 多用户与协作支持
+- 多用户会话管理（目前不支持）
+- 共享世界与多人协作探索
+- 用户间交互和影响系统
+
+### 10.5 平台扩展
+- 移动端适配（iOS/Android）
+- VR/AR 沉浸式体验
+- 多星球系统和星际旅行
+- MOD 生态和社区创意分享
