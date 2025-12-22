@@ -12,25 +12,25 @@ import type { Context, ContextField, Step, ProcessStepRequest, StartGameRequest 
 const gameRouter = new Hono();
 
 /**
- * 初始化处理链
+ * Initialize processing chain
  */
 function createProcessingChain(): ProcessingChain {
   const chain = new ProcessingChain();
 
-  // 预处理阶段
+  // Preprocessing stage
   chain.register(new InputProcessingNode());
   chain.register(new TimeManagementNode());
   chain.register(new StateManagementNode());
   chain.register(new PreLogSummaryNode());
 
-  // 事件生成阶段
+  // Event generation stage
   chain.register(new LLMCoreNode());
 
   return chain;
 }
 
 /**
- * 创建初始 Context
+ * Create initial Context
  */
 function createInitialContext(): Context {
   return {

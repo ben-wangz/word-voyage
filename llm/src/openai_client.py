@@ -28,8 +28,16 @@ def build_user_prompt(prompt: str, context: Dict[str, Any], pre_log_summary: str
     if context:
         user_prompt += "Current game state:\n"
         for field_name, field_value in context.items():
-            description = field_value.get('description', '')
-            user_prompt += f"- {field_name}: {field_value['value']} ({description})\n"
+            # Handle both dict and Pydantic model
+            if isinstance(field_value, dict):
+                value = field_value.get('value', '')
+                description = field_value.get('description', '')
+            else:
+                # Pydantic model or object with attributes
+                value = getattr(field_value, 'value', '')
+                description = getattr(field_value, 'description', '')
+
+            user_prompt += f"- {field_name}: {value} ({description})\n"
         user_prompt += "\n"
 
     # Add pre-log summary if provided
@@ -93,30 +101,119 @@ def generate_structured(
             stream=True
         )
     else:
-        response = client.chat.completions.create(
+        # Create completion without streaming
+        completion = client.chat.completions.create(
             model=model,
             messages=messages,
             stream=False
         )
 
-        content = response.choices[0].message.content
-        logger.debug(f"Raw response: {content}")
+        # Extract content from the completion
+        if not hasattr(completion, 'choices') or len(completion.choices) == 0:
+            logger.error(f"Invalid response structure: {completion}")
+            raise ValueError("Invalid response structure from OpenAI API")
 
-        # Try to parse JSON from response
+        message = completion.choices[0].message
+        content = getattr(message, 'content', '')
+        reasoning_content = getattr(message, 'reasoning_content', '')
+
+        logger.debug(f"Reasoning content: {reasoning_content}")
+        logger.debug(f"Main content: {content}")
+
+        # Use content field for JSON parsing, ignore reasoning_content
+        if not content:
+            raise ValueError("No content received from OpenAI API")
+
+        # Try to parse JSON from response with adaptive extraction
+        def extract_json_from_text(text: str) -> str:
+            """Extract JSON from mixed content (thoughts + JSON)"""
+            text = text.strip()
+
+            # Method 1: Find JSON code blocks
+            if '```json' in text:
+                start = text.find('```json') + 7
+                end = text.find('```', start)
+                if end != -1:
+                    return text[start:end].strip()
+            elif '```' in text:
+                start = text.find('```') + 3
+                end = text.find('```', start)
+                if end != -1:
+                    return text[start:end].strip()
+
+            # Method 2: Find JSON object boundaries
+            json_start = -1
+            brace_count = 0
+            in_string = False
+            escape_next = False
+
+            for i, char in enumerate(text):
+                if escape_next:
+                    escape_next = False
+                    continue
+
+                if char == '\\':
+                    escape_next = True
+                    continue
+
+                if char == '"' and not escape_next:
+                    in_string = not in_string
+                    continue
+
+                if not in_string:
+                    if char == '{':
+                        if json_start == -1:
+                            json_start = i
+                        brace_count += 1
+                    elif char == '}':
+                        if json_start != -1:
+                            brace_count -= 1
+                            if brace_count == 0:
+                                return text[json_start:i+1]
+
+            # Method 3: Try to find simple JSON patterns
+            lines = text.split('\n')
+            json_lines = []
+            in_json = False
+
+            for line in lines:
+                line = line.strip()
+                if line.startswith('{'):
+                    in_json = True
+                    json_lines.append(line)
+                elif in_json:
+                    json_lines.append(line)
+                    if line.endswith('}'):
+                        break
+
+            if json_lines:
+                potential_json = '\n'.join(json_lines)
+                try:
+                    json.loads(potential_json)
+                    return potential_json
+                except:
+                    pass
+
+            # Method 4: Try the whole text as last resort
+            return text
+
         try:
-            # Remove any markdown code blocks if present
-            content = content.strip()
-            if content.startswith('```json'):
-                content = content[7:]
-            if content.endswith('```'):
-                content = content[:-3]
-            content = content.strip()
+            # Combine content and reasoning if both exist
+            full_text = content
+            if reasoning_content:
+                full_text = f"{reasoning_content}\n\n{content}"
 
-            result = json.loads(content)
+            # Extract JSON from the mixed content
+            json_content = extract_json_from_text(full_text)
+            logger.debug(f"Extracted JSON content: {json_content[:200]}...")
+
+            result = json.loads(json_content)
             logger.debug(f"Parsed result: {result}")
             return result
 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {e}")
-            logger.error(f"Raw content: {content}")
+            logger.error(f"Extracted JSON content: {json_content if 'json_content' in locals() else 'N/A'}")
+            logger.error(f"Full content: {content[:500]}...")
+            logger.error(f"Reasoning content: {reasoning_content[:500] if reasoning_content else 'N/A'}")
             raise ValueError(f"Invalid JSON response: {e}")
