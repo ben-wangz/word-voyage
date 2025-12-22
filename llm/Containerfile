@@ -1,0 +1,42 @@
+FROM m.daocloud.io/docker.io/python:3.11-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install tini
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tini \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy requirements
+COPY requirements.txt /tmp/requirements.txt
+
+# Build arguments for PyPI repository
+ARG PIP_INDEX_URL
+ARG PIP_TRUSTED_HOST
+
+# Install dependencies
+RUN PIP_EXTRA_ARGS="" \
+    && if [ -n "$PIP_INDEX_URL" ]; then \
+        echo "Using custom PyPI repository: $PIP_INDEX_URL"; \
+        PIP_EXTRA_ARGS="$PIP_EXTRA_ARGS -i $PIP_INDEX_URL"; \
+        if [ -n "$PIP_TRUSTED_HOST" ]; then \
+            echo "Using custom PyPI trusted host: $PIP_TRUSTED_HOST"; \
+            PIP_EXTRA_ARGS="$PIP_EXTRA_ARGS --trusted-host $PIP_TRUSTED_HOST"; \
+        fi; \
+    fi \
+    && pip install --no-cache-dir $PIP_EXTRA_ARGS -r /tmp/requirements.txt
+
+# Copy application
+COPY src/ ./src/
+COPY entrypoint.sh .
+
+RUN chmod +x entrypoint.sh
+
+# Environment
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["./entrypoint.sh"]
