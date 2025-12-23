@@ -96,3 +96,58 @@ export interface ErrorResponse {
     details?: unknown;
   };
 }
+
+// ==========================================
+// LLM Service Types
+// ==========================================
+
+/**
+ * Schema field definition for LLM structured output
+ */
+export interface SchemaField {
+  type: string;
+  description: string;
+}
+
+/**
+ * Validation error from LLM service
+ */
+export interface ValidationResult {
+  field: string;
+  expected: string;
+  received: string;
+}
+
+/**
+ * LLM service request body
+ */
+export interface LLMGenerationRequest {
+  prompt: string;
+  context: {
+    [key: string]: ContextField;
+  };
+  pre_log_summary?: {
+    summary: string;
+    recent_events: string[];
+  };
+  user_input?: string;
+  schema: {
+    [key: string]: SchemaField;
+  };
+  stream?: boolean;
+  model?: string;
+}
+
+/**
+ * LLM service response body
+ */
+export interface LLMGenerationResponse {
+  success: boolean;
+  message: string;
+  result?: {
+    [key: string]: any;
+  };
+  error_code?: string;
+  validation_errors?: ValidationResult[];
+  fix_suggestion?: string;
+}
