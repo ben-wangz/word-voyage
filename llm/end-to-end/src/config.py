@@ -1,28 +1,30 @@
-"""Configuration for OpenAI LLM E2E tests"""
+"""Configuration for end-to-end tests"""
 
 import os
 
 
 class Config:
-    """Configuration from environment variables"""
+    """Test configuration"""
 
-    # OpenAI LLM Service
-    SERVICE_URL = os.getenv("SERVICE_URL", "http://host.containers.internal:8011")
+    # Service endpoint
+    SERVICE_URL = os.getenv("LLM_SERVICE_URL", "http://host.containers.internal:8011")
+
+    # Test context limits
+    CONTEXT_MAX_FIELDS = 16
 
     @classmethod
     def validate(cls):
         """Validate required configuration"""
-        required = {
-            "SERVICE_URL": cls.SERVICE_URL,
-        }
-
-        missing = [k for k, v in required.items() if not v]
-        if missing:
-            raise ValueError(f"Missing required configuration: {', '.join(missing)}")
+        if not cls.SERVICE_URL:
+            raise ValueError("LLM_SERVICE_URL must be set")
 
     @classmethod
     def display(cls):
-        """Display configuration (safe)"""
-        print("Configuration:")
-        print(f"  Service URL: {cls.SERVICE_URL}")
+        """Display configuration"""
+        print("=" * 50)
+        print("Test Configuration")
+        print("=" * 50)
+        print(f"Service URL: {cls.SERVICE_URL}")
+        print(f"Context Max Fields: {cls.CONTEXT_MAX_FIELDS}")
+        print("=" * 50)
         print()

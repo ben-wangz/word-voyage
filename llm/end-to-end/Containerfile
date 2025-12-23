@@ -1,4 +1,4 @@
-# Containerfile for OpenAI LLM end-to-end tests
+# Containerfile for LLM Service end-to-end tests
 # This image contains all tools needed to run integration tests
 
 FROM m.daocloud.io/docker.io/library/python:3.11-slim

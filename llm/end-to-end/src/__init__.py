@@ -1,1 +1,1 @@
-# OpenAI LLM Service End-to-End Tests
+# LLM Service end-to-end test package

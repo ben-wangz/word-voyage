@@ -1,30 +1,28 @@
 #!/usr/bin/env python3
 """
-Main test runner for OpenAI LLM end-to-end tests
+Main test runner for LLM Service end-to-end tests
 
 Runs all test suites and reports results.
 """
 
 import sys
 import argparse
-import logging
 from .config import Config
-from .test_client import LLMTestClient
-from .test_scenarios import LLMTestScenarios
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+from .utils.llm_client import LLMClient
+from .utils.test_result import TestResult
+from .case.test_health import test_health_check
+from .case.test_generate import (
+    test_simple_generation,
+    test_context_changes,
+    test_context_limit
 )
-logger = logging.getLogger(__name__)
 
 
 def run_all_tests(service_url: str = None) -> bool:
     """Run all test suites
 
     Args:
-        service_url: OpenAI LLM service URL (defaults to Config.SERVICE_URL)
+        service_url: LLM service URL (defaults to Config.SERVICE_URL)
 
     Returns:
         True if all tests passed, False otherwise
@@ -43,21 +41,38 @@ def run_all_tests(service_url: str = None) -> bool:
     # Display configuration
     Config.display()
 
+    result = TestResult()
+
     try:
-        with LLMTestClient(Config.SERVICE_URL) as client:
-            print(f"🔗 Connected to service: {Config.SERVICE_URL}")
+        with LLMClient(service_url=Config.SERVICE_URL) as client:
+            print(f"Connected to service: {Config.SERVICE_URL}")
+            print(f"Service status: {client.service_name}")
+            print()
 
-            # Get service health info
-            health = client.health_check()
-            print(f"📋 Service info: {health}")
+            # Run all tests
+            try:
+                test_health_check(client, result)
+            except Exception as e:
+                print(f"\nHealth check failed: {e}")
 
-            # Run test scenarios
-            scenarios = LLMTestScenarios(client)
-            return scenarios.run_all_tests()
+            try:
+                test_simple_generation(client, result)
+            except Exception as e:
+                print(f"\nSimple generation test failed: {e}")
+
+            try:
+                test_context_changes(client, result)
+            except Exception as e:
+                print(f"\nContext changes test failed: {e}")
+
+            try:
+                test_context_limit(client, result)
+            except Exception as e:
+                print(f"\nContext limit test failed: {e}")
 
     except ConnectionError as e:
         print(f"\n✗ Connection failed: {e}")
-        print("\n💡 Tip: Ensure OpenAI LLM service is running and accessible")
+        print("\nTip: Ensure LLM service is running and OPENAI_API_KEY is set")
         return False
 
     except Exception as e:
@@ -66,28 +81,27 @@ def run_all_tests(service_url: str = None) -> bool:
         traceback.print_exc()
         return False
 
+    finally:
+        # Always print summary
+        result.print_summary()
+
+    # Check if all tests passed
+    failed_count = sum(1 for r in result.results if r["status"] == "failed")
+    return failed_count == 0
+
 
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description="OpenAI LLM End-to-End Tests"
+        description="LLM Service End-to-End Tests"
     )
     parser.add_argument(
         "--url",
         default=None,
-        help=f"OpenAI LLM service URL (default: {Config.SERVICE_URL})"
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Enable verbose logging"
+        help=f"LLM service URL (default: {Config.SERVICE_URL})"
     )
 
     args = parser.parse_args()
-
-    # Configure logging level
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
 
     success = run_all_tests(service_url=args.url)
     return 0 if success else 1

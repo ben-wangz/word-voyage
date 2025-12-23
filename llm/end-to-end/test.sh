@@ -1,5 +1,5 @@
 #!/bin/bash
-# End-to-end test orchestration script for OpenAI LLM Service
+# End-to-end test orchestration script for LLM Service
 
 set -e
 
@@ -44,7 +44,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --cleanup-only      Only cleanup test containers"
-            echo "  --skip-build        Skip building the OpenAI LLM image"
+            echo "  --skip-build        Skip building the LLM Service image"
             echo "  --help, -h          Show this help message"
             exit 0
             ;;
@@ -60,7 +60,8 @@ cd "$PROJECT_ROOT"
 
 # Cleanup function
 cleanup() {
-    log_info "Cleaning up..."
+    log_info "Cleaning up after 15 seconds..."
+    sleep 15
     bash "$DEPLOY_SCRIPT" --action stop
 }
 
@@ -75,15 +76,22 @@ fi
 
 # Main test flow
 log_info "=========================================="
-log_info "OpenAI LLM E2E Test Suite"
+log_info "LLM Service E2E Test Suite"
 log_info "=========================================="
-log_warn "This test assumes the OpenAI LLM Service is configured with OPENAI_API_KEY."
-log_warn "Please ensure the service has proper OpenAI API configuration."
+log_warn "This test requires OPENAI_API_KEY environment variable to be set."
 log_info ""
 
-log_info "Step 1: Starting OpenAI LLM Service..."
+# Check for OPENAI_API_KEY
+if [ -z "$OPENAI_API_KEY" ]; then
+    log_error "OPENAI_API_KEY environment variable is not set"
+    log_error "Please set it before running tests:"
+    log_error "  export OPENAI_API_KEY='your-api-key'"
+    exit 1
+fi
+
+log_info "Step 1: Starting LLM Service..."
 if [ $SKIP_BUILD -eq 0 ]; then
-    log_info "Building OpenAI LLM image..."
+    log_info "Building LLM Service image..."
     bash "$DEPLOY_SCRIPT" --action start --build
 else
     log_info "Skipping build (--skip-build flag set)"
@@ -115,13 +123,7 @@ bash "$SCRIPT_DIR/build.sh"
 log_info ""
 log_info "Step 2: Running tests in container..."
 log_info "Executing tests..."
-
 podman run --rm \
-    -e SERVICE_URL="http://host.containers.internal:8011" \
-    openai-llm-e2e:latest \
+    --add-host=host.containers.internal:host-gateway \
+    llm-e2e:latest \
     python -m src.run_tests
-
-log_info ""
-log_info "=========================================="
-log_info "E2E Test Suite Completed!"
-log_info "=========================================="

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==========================================
-# OpenAI LLM E2E Test - Build Script
+# LLM Service E2E Test - Build Script
 # ==========================================
 
 set -e
@@ -14,7 +14,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-IMAGE_NAME=${IMAGE_NAME:-"openai-llm-e2e"}
+IMAGE_NAME=${IMAGE_NAME:-"llm-e2e"}
 VERSION=${VERSION:-"1.0.0"}
 TAG="${IMAGE_NAME}:${VERSION}"
 TAG_LATEST="${IMAGE_NAME}:latest"
@@ -27,7 +27,7 @@ PIP_INDEX_URL=${PIP_INDEX_URL:-""}
 PIP_TRUSTED_HOST=${PIP_TRUSTED_HOST:-""}
 
 echo -e "${BLUE}=========================================="
-echo "  Building OpenAI LLM E2E Test Image"
+echo "  Building LLM Service E2E Test Image"
 echo -e "==========================================${NC}"
 echo ""
 echo "Image tags:"
