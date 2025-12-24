@@ -3,19 +3,26 @@ import json
 import logging
 from typing import Dict, Any, Iterator
 from openai import OpenAI
-from .config import OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL, LOG_LEVEL
+from .config import OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL, LOG_LEVEL, LLM_MAX_TOKENS
 
 logger = logging.getLogger(__name__)
 
 
 def build_system_prompt(schema: Dict[str, Any]) -> str:
     """Build system prompt with schema requirements"""
-    schema_description = "You must respond with valid JSON that follows this exact schema:\n"
+    schema_description = "You must respond with ONLY valid JSON that follows this exact schema:\n"
 
     for field_name, field_def in schema.items():
         schema_description += f"- {field_name}: {field_def.description} (type: {field_def.type})\n"
 
-    schema_description += "\nIMPORTANT: Return only the JSON object, no markdown code blocks or extra text."
+    schema_description += """
+CRITICAL RULES:
+1. Return ONLY the JSON object, nothing else
+2. NO thinking process, NO explanations, NO markdown
+3. Ensure all JSON strings are properly closed with quotes
+4. Do NOT use control characters or special symbols in strings
+5. Your entire response must be valid JSON starting with opening brace and ending with closing brace
+"""
 
     return schema_description
 
@@ -88,6 +95,7 @@ def generate_structured(
 
     logger.debug(f"System prompt: {system_prompt}")
     logger.debug(f"User prompt: {user_prompt}")
+    logger.info(f"Calling OpenAI with model={model}, max_tokens={LLM_MAX_TOKENS}")
 
     messages = [
         {'role': 'system', 'content': system_prompt},
@@ -98,6 +106,8 @@ def generate_structured(
         return client.chat.completions.create(
             model=model,
             messages=messages,
+            max_tokens=LLM_MAX_TOKENS,
+            response_format={"type": "json_object"},
             stream=True
         )
     else:
@@ -105,6 +115,8 @@ def generate_structured(
         completion = client.chat.completions.create(
             model=model,
             messages=messages,
+            max_tokens=LLM_MAX_TOKENS,
+            response_format={"type": "json_object"},
             stream=False
         )
 
@@ -197,17 +209,36 @@ def generate_structured(
             # Method 4: Try the whole text as last resort
             return text
 
+        def clean_json_string(json_str: str) -> str:
+            """Clean JSON string by removing/escaping control characters"""
+            import re
+            # Remove control characters except \n, \r, \t
+            # Control chars are 0x00-0x1F except tab(0x09), newline(0x0A), carriage return(0x0D)
+            cleaned = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F]', '', json_str)
+            return cleaned
+
         try:
-            # Combine content and reasoning if both exist
-            full_text = content
-            if reasoning_content:
-                full_text = f"{reasoning_content}\n\n{content}"
+            # Strategy 1: Try to extract from content first (most reliable)
+            json_content = extract_json_from_text(content)
+            logger.debug(f"Extracted JSON from content: {json_content[:200]}...")
 
-            # Extract JSON from the mixed content
-            json_content = extract_json_from_text(full_text)
-            logger.debug(f"Extracted JSON content: {json_content[:200]}...")
+            # Validate it's actually JSON-like (starts with { or [)
+            json_content_stripped = json_content.strip()
+            if not json_content_stripped.startswith('{') and not json_content_stripped.startswith('['):
+                logger.warning("Extracted content doesn't look like JSON, trying with reasoning...")
+                # Strategy 2: If content extraction failed, try full text including reasoning
+                if reasoning_content:
+                    full_text = f"{reasoning_content}\n\n{content}"
+                    json_content = extract_json_from_text(full_text)
+                    logger.debug(f"Extracted JSON from full text: {json_content[:200]}...")
 
-            result = json.loads(json_content)
+            # Clean control characters
+            json_content_cleaned = clean_json_string(json_content)
+            if json_content != json_content_cleaned:
+                logger.warning("Control characters found and removed from JSON")
+                logger.debug(f"Cleaned JSON content: {json_content_cleaned[:200]}...")
+
+            result = json.loads(json_content_cleaned)
             logger.debug(f"Parsed result: {result}")
             return result
 

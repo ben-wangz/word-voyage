@@ -1,0 +1,31 @@
+# Containerfile for Backend end-to-end tests
+# This image contains all tools needed to run integration tests
+
+FROM m.daocloud.io/docker.io/library/python:3.11-slim
+
+# Copy requirements
+COPY requirements.txt /tmp/requirements.txt
+
+# Build arguments for custom PyPI repository
+ARG PIP_INDEX_URL
+ARG PIP_TRUSTED_HOST
+
+# Install Python dependencies
+RUN PIP_EXTRA_ARGS="" \
+    && if [ -n "$PIP_INDEX_URL" ]; then \
+        echo "Using custom PyPI repository: $PIP_INDEX_URL"; \
+        PIP_EXTRA_ARGS="-i $PIP_INDEX_URL"; \
+        if [ -n "$PIP_TRUSTED_HOST" ]; then \
+            echo "Using custom PyPI trusted host: $PIP_TRUSTED_HOST"; \
+            PIP_EXTRA_ARGS="$PIP_EXTRA_ARGS --trusted-host $PIP_TRUSTED_HOST"; \
+        fi; \
+    fi \
+    && pip install --no-cache-dir $PIP_EXTRA_ARGS -r /tmp/requirements.txt
+
+COPY src/ /opt/testbed/src/
+
+# Set working directory
+WORKDIR /opt/testbed
+
+# Default command - run all tests
+CMD ["python", "-m", "src.run_tests"]

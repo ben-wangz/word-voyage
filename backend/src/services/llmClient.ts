@@ -19,6 +19,10 @@ export class LLMClient {
    */
   async generateStructured(request: LLMGenerationRequest): Promise<LLMGenerationResponse> {
     try {
+      console.log(`[LLMClient] Sending request to ${this.serviceUrl}/generate_structured`);
+      console.log(`[LLMClient] Request context fields: ${Object.keys(request.context).length}`);
+      console.log(`[LLMClient] Request user_input: ${request.user_input}`);
+
       const response = await fetch(`${this.serviceUrl}/generate_structured`, {
         method: 'POST',
         headers: {
@@ -28,11 +32,31 @@ export class LLMClient {
         signal: AbortSignal.timeout(this.timeout),
       });
 
+      console.log(`[LLMClient] Response status: ${response.status}`);
+
       if (!response.ok) {
+        const responseText = await response.text();
+        console.error(`[LLMClient] Error response body: ${responseText}`);
         throw new Error(`LLM service returned ${response.status}: ${response.statusText}`);
       }
 
-      const data: LLMGenerationResponse = await response.json();
+      const responseText = await response.text();
+      console.log(`[LLMClient] Raw response: ${responseText.substring(0, 500)}`);
+
+      let data: LLMGenerationResponse;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(`[LLMClient] Failed to parse JSON response: ${parseError}`);
+        console.error(`[LLMClient] Response text: ${responseText}`);
+        throw parseError;
+      }
+
+      console.log(`[LLMClient] Response success: ${data.success}`);
+      if (!data.success) {
+        console.error(`[LLMClient] LLM error: ${data.error_code} - ${data.message}`);
+      }
+
       return data;
     } catch (error) {
       if (error instanceof Error) {
