@@ -131,7 +131,6 @@ log_info "Step 2: Starting Browserless Chromium container..."
 BROWSERLESS_CONTAINER_ID=$(podman run -d \
     --name "$BROWSERLESS_CONTAINER" \
     -p "$BROWSERLESS_PORT:3000" \
-    --shm-size=2gb \
     "$BROWSERLESS_IMAGE")
 
 log_info "Browserless container started: $BROWSERLESS_CONTAINER_ID"
