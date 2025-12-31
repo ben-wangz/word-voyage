@@ -1,6 +1,8 @@
 import i18next from 'i18next';
 import FsBackend from 'i18next-fs-backend';
 import { config } from '../config.ts';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 let i18nInstance: typeof i18next | null = null;
 
@@ -9,13 +11,20 @@ export async function initializeI18n(): Promise<void> {
     return;
   }
 
+  // Get the directory of the current module
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const localesPath = join(__dirname, 'locales', '{{lng}}', '{{ns}}.json');
+
   await i18next.use(FsBackend).init({
     lng: config.defaultLanguage,
     fallbackLng: 'en',
+    supportedLngs: ['en', 'zh'],
+    preload: ['en', 'zh'], // Preload all supported languages
     ns: ['common', 'game', 'prompts'],
     defaultNS: 'common',
     backend: {
-      loadPath: new URL('./locales/{{lng}}/{{ns}}.json', import.meta.url).pathname,
+      loadPath: localesPath,
     },
     interpolation: {
       escapeValue: false,

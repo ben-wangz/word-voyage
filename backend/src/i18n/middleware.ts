@@ -28,15 +28,18 @@ export function i18nMiddleware() {
       if (firstLang === 'zh' || firstLang === 'en') {
         detectedLanguage = firstLang as 'en' | 'zh';
       }
+    } else {
+      console.log(`[i18n] Using default language: ${detectedLanguage}`);
     }
 
     // Create translation function bound to detected language
     const t = (key: string, defaultValue?: string, options?: Record<string, any>) => {
-      return i18n.t(key, {
+      const result = i18n.t(key, {
         lng: detectedLanguage,
         defaultValue,
         ...options,
       });
+      return result;
     };
 
     // Store language and translator in Hono context
