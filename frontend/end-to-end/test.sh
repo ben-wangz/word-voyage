@@ -130,7 +130,10 @@ log_info ""
 log_info "Step 2: Starting Browserless Chromium container..."
 BROWSERLESS_CONTAINER_ID=$(podman run -d \
     --name "$BROWSERLESS_CONTAINER" \
-    -p "$BROWSERLESS_PORT:3000" \
+    -p "$BROWSERLESS_PORT:3003" \
+    -e "PORT=3003" \
+    -e "TIMEOUT=300000" \
+    -e "CONNECTION_TIMEOUT=300000" \
     "$BROWSERLESS_IMAGE")
 
 log_info "Browserless container started: $BROWSERLESS_CONTAINER_ID"

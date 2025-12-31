@@ -10,7 +10,7 @@ class Config:
 
     # Service URLs
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://host.containers.internal:3000")
-    BROWSER_WS_URL = os.getenv("BROWSER_WS_URL", "ws://host.containers.internal:3003/chromium/playwright?headless=true")
+    BROWSER_WS_URL = os.getenv("BROWSER_WS_URL", "ws://host.containers.internal:3003")
     SCREENSHOT_DIR = os.getenv("SCREENSHOT_DIR", "/app/screenshots")
 
     # Timeouts (in seconds)

@@ -172,8 +172,7 @@ class PlaywrightClient:
         input_selector = "input[type='text'], textarea"
         input_field = self.page.wait_for_selector(input_selector, timeout=self.timeout)
 
-        # Clear and type
-        input_field.clear()
+        # Type (fill automatically clears existing text)
         input_field.fill(text)
 
         # Submit (try multiple methods)
@@ -226,7 +225,8 @@ class PlaywrightClient:
                 current_text = self.get_current_event_text()
                 if current_text != previous_event_text:
                     return
-            except:
+            except Exception as e:
+                # Log the exception for debugging but continue polling
                 pass
 
             time.sleep(0.5)
