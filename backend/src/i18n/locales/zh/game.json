@@ -1,6 +1,6 @@
 {
   "initial": {
-    "eventDescription": "你的飞船在紧急降落未知星球时坠毁。驾驶舱内警报响起,氧气含量正在下降。你必须想办法在这个荒凉的世界中生存并逃离。",
+    "eventDescription": "@file:./initialEvent.txt",
     "summary": "游戏开始。玩家在坠毁的飞船中醒来。",
     "state": {
       "health": "生命值",

@@ -14,6 +14,7 @@ EXPECTED_TRANSLATIONS = {
         "thirst_desc": "Thirst level",
         "energy_desc": "Energy level",
         "location_desc": "Current location",
+        "event_keyword": "spacecraft",  # Keyword from event description (@file:)
     },
     "zh": {
         "location": "坠毁的飞船",
@@ -22,6 +23,7 @@ EXPECTED_TRANSLATIONS = {
         "thirst_desc": "口渴度",
         "energy_desc": "精力值",
         "location_desc": "当前位置",
+        "event_keyword": "飞船",  # Keyword from Chinese event description (@file:)
     }
 }
 
@@ -66,7 +68,13 @@ def test_game_init_i18n(client: BackendGameClient, result: TestResult):
         assert en_hunger_desc == EXPECTED_TRANSLATIONS["en"]["hunger_desc"], \
             f"Expected English hunger desc '{EXPECTED_TRANSLATIONS['en']['hunger_desc']}', got '{en_hunger_desc}'"
 
-        print(f"  ✓ English translations verified")
+        # Verify English event description (loaded via @file:)
+        en_event_desc = en_step.get('event', {}).get('description', '')
+        print(f"  Event desc keyword: {EXPECTED_TRANSLATIONS['en']['event_keyword']}")
+        assert EXPECTED_TRANSLATIONS["en"]["event_keyword"] in en_event_desc, \
+            f"Expected keyword '{EXPECTED_TRANSLATIONS['en']['event_keyword']}' in event description, got '{en_event_desc[:100]}'"
+
+        print(f"  ✓ English translations verified (including @file: content)")
 
         # Test Chinese version
         print(f"\n--- Testing Chinese (lang=zh) ---")
@@ -98,7 +106,13 @@ def test_game_init_i18n(client: BackendGameClient, result: TestResult):
         assert zh_hunger_desc == EXPECTED_TRANSLATIONS["zh"]["hunger_desc"], \
             f"Expected Chinese hunger desc '{EXPECTED_TRANSLATIONS['zh']['hunger_desc']}', got '{zh_hunger_desc}'"
 
-        print(f"  ✓ Chinese translations verified")
+        # Verify Chinese event description (loaded via @file:)
+        zh_event_desc = zh_step.get('event', {}).get('description', '')
+        print(f"  Event desc keyword: {EXPECTED_TRANSLATIONS['zh']['event_keyword']}")
+        assert EXPECTED_TRANSLATIONS["zh"]["event_keyword"] in zh_event_desc, \
+            f"Expected keyword '{EXPECTED_TRANSLATIONS['zh']['event_keyword']}' in event description, got '{zh_event_desc[:100]}'"
+
+        print(f"  ✓ Chinese translations verified (including @file: content)")
 
         # Verify that English and Chinese are different
         print(f"\n--- Verifying English != Chinese ---")
@@ -106,8 +120,11 @@ def test_game_init_i18n(client: BackendGameClient, result: TestResult):
             "English and Chinese location values should be different"
         assert en_health_desc != zh_health_desc, \
             "English and Chinese health descriptions should be different"
+        assert en_event_desc != zh_event_desc, \
+            "English and Chinese event descriptions should be different"
 
         print(f"  ✓ English and Chinese content are different")
+        print(f"  ✓ @file: references are correctly loaded and translated")
         print(f"\n  ✓ i18n capability verified successfully")
 
         result.add(test_name, "success", time.time() - start_time)

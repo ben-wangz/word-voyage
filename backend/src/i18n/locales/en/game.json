@@ -1,6 +1,6 @@
 {
   "initial": {
-    "eventDescription": "Your spacecraft crashes during an emergency landing on an unknown planet. Alarms blare inside the cabin, and oxygen levels are dropping. You must find a way to survive and escape this desolate world.",
+    "eventDescription": "@file:./initialEvent.txt",
     "summary": "Game starts. Player awakens in a crashed spaceship.",
     "state": {
       "health": "Health points",
