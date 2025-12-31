@@ -1,8 +1,12 @@
+import { useTranslation } from 'react-i18next';
+
 export function EventDisplay({ event, isLoading }) {
+  const { t } = useTranslation();
+
   if (!event) {
     return (
       <div className="event-display empty">
-        <p>Waiting for first event...</p>
+        <p>{t('event.waiting')}</p>
       </div>
     );
   }
@@ -14,7 +18,7 @@ export function EventDisplay({ event, isLoading }) {
       </div>
       {isLoading && (
         <div className="loading">
-          <span className="spinner"></span> Thinking...
+          <span className="spinner"></span> {t('event.thinking')}
         </div>
       )}
     </div>

@@ -1,11 +1,15 @@
+import { useTranslation } from 'react-i18next';
+
 export function ContextDisplay({ context }) {
+  const { t } = useTranslation();
+
   if (!context) {
-    return <div className="context-display empty">No context</div>;
+    return <div className="context-display empty">{t('context.empty')}</div>;
   }
 
   return (
     <div className="context-display">
-      <h3>Game State</h3>
+      <h3>{t('context.title')}</h3>
       <table>
         <tbody>
           {Object.entries(context.state || {}).map(([key, field]) => (
@@ -19,7 +23,7 @@ export function ContextDisplay({ context }) {
         </tbody>
       </table>
       <div className="game-time">
-        Game Time: {Math.floor((context.gameTime || 0) / 3600)} hours
+        {t('context.gameTime')}{Math.floor((context.gameTime || 0) / 3600)} hours
       </div>
     </div>
   );

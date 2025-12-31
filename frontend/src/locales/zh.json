@@ -1,0 +1,28 @@
+{
+  "app": {
+    "title": "文字启航",
+    "subtitle": "由你的想象力驱动的文字沙盒冒险游戏"
+  },
+  "form": {
+    "placeholder": "描述你的行动或想法...",
+    "submit": "提交",
+    "processing": "处理中..."
+  },
+  "context": {
+    "title": "游戏状态",
+    "empty": "暂无上下文",
+    "gameTime": "游戏时间: "
+  },
+  "event": {
+    "waiting": "等待第一个事件...",
+    "thinking": "思考中..."
+  },
+  "history": {
+    "title": "事件历史",
+    "empty": "暂无历史记录",
+    "you": "你: "
+  },
+  "error": {
+    "prefix": "错误:"
+  }
+}

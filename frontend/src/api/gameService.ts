@@ -26,8 +26,13 @@ export interface GameResponse {
 }
 
 class GameService {
-  async startGame(): Promise<GameResponse> {
-    const response = await fetch(`${API_BASE}/start`, {
+  async startGame(language?: string): Promise<GameResponse> {
+    const url = new URL(`${window.location.origin}${API_BASE}/start`);
+    if (language) {
+      url.searchParams.append('lang', language);
+    }
+
+    const response = await fetch(url.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -41,8 +46,13 @@ class GameService {
     return response.json();
   }
 
-  async processStep(input: string, sessionId: string): Promise<GameResponse> {
-    const response = await fetch(`${API_BASE}/step`, {
+  async processStep(input: string, sessionId: string, language?: string): Promise<GameResponse> {
+    const url = new URL(`${window.location.origin}${API_BASE}/step`);
+    if (language) {
+      url.searchParams.append('lang', language);
+    }
+
+    const response = await fetch(url.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

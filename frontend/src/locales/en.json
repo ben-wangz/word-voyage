@@ -1,0 +1,28 @@
+{
+  "app": {
+    "title": "WordVoyage",
+    "subtitle": "A text-based sandbox adventure driven by your imagination"
+  },
+  "form": {
+    "placeholder": "Describe your action or thought...",
+    "submit": "Submit",
+    "processing": "Processing..."
+  },
+  "context": {
+    "title": "Game State",
+    "empty": "No context",
+    "gameTime": "Game Time: "
+  },
+  "event": {
+    "waiting": "Waiting for first event...",
+    "thinking": "Thinking..."
+  },
+  "history": {
+    "title": "Event History",
+    "empty": "No history yet",
+    "you": "You: "
+  },
+  "error": {
+    "prefix": "Error:"
+  }
+}

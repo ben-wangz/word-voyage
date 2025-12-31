@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import gameService from '../api/gameService';
 import { EventDisplay } from '../components/EventDisplay';
 import { ContextDisplay } from '../components/ContextDisplay';
 import { InputForm } from '../components/InputForm';
 import { EventHistory } from '../components/EventHistory';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 
 export function GamePage() {
+  const { t, i18n } = useTranslation();
   const [sessionId, setSessionId] = useState(null);
   const [currentStep, setCurrentStep] = useState(null);
   const [context, setContext] = useState(null);
@@ -21,7 +24,7 @@ export function GamePage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await gameService.startGame();
+      const response = await gameService.startGame(i18n.language);
       setSessionId(response.sessionId);
       setCurrentStep(response.step);
       setContext(response.step.context);
@@ -40,7 +43,7 @@ export function GamePage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await gameService.processStep(input, sessionId);
+      const response = await gameService.processStep(input, sessionId, i18n.language);
       setCurrentStep(response.step);
       setContext(response.step.context);
       setHistory((prev) => [...prev, response.step]);
@@ -55,13 +58,16 @@ export function GamePage() {
   return (
     <div className="game-page">
       <header className="game-header">
-        <h1>WordVoyage</h1>
-        <p>A text-based sandbox adventure powered by AI</p>
+        <div>
+          <h1>{t('app.title')}</h1>
+          <p>{t('app.subtitle')}</p>
+        </div>
+        <LanguageSwitcher />
       </header>
 
       {error && (
         <div className="error-message">
-          <strong>Error:</strong> {error}
+          <strong>{t('error.prefix')}</strong> {error}
         </div>
       )}
 

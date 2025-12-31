@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function InputForm({ onSubmit, disabled }) {
+  const { t } = useTranslation();
   const [input, setInput] = useState('');
 
   const handleSubmit = (e) => {
@@ -23,12 +25,12 @@ export function InputForm({ onSubmit, disabled }) {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Describe your action or thought..."
+        placeholder={t('form.placeholder')}
         disabled={disabled}
         rows="3"
       />
       <button type="submit" disabled={disabled || !input.trim()}>
-        {disabled ? 'Processing...' : 'Submit'}
+        {disabled ? t('form.processing') : t('form.submit')}
       </button>
     </form>
   );
