@@ -1,0 +1,9 @@
+{
+  "errors": {
+    "inputRequired": "输入不能为空",
+    "sessionIdRequired": "会话 ID 是必需的",
+    "sessionNotFound": "会话未找到",
+    "internalError": "内部服务器错误",
+    "contextLimitExceeded": "上下文字段数量超过限制: {{current}} > {{max}}。请使用机制询问删除一些字段。"
+  }
+}

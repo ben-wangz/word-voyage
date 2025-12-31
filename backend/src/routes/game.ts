@@ -7,7 +7,7 @@ import { PreLogSummaryNode } from '../nodes/preLogSummaryNode.ts';
 import { LLMCoreNode } from '../nodes/llmCoreNode.ts';
 import { getSession } from '../services/session.ts';
 import { getStepStorage } from '../services/stepStorage.ts';
-import type { Context, ContextField, Step, ProcessStepRequest, StartGameRequest } from '../types/index.ts';
+import type { Context, ContextField, Step, ProcessStepRequest, StartGameRequest, I18nContext } from '../types/index.ts';
 
 const gameRouter = new Hono();
 
@@ -32,14 +32,18 @@ function createProcessingChain(): ProcessingChain {
 /**
  * Create initial Context
  */
-function createInitialContext(): Context {
+function createInitialContext(t: (key: string, defaultValue?: string) => string): Context {
   return {
     state: {
-      health: { value: 100, type: 'number', description: 'Health points' },
-      hunger: { value: 50, type: 'number', description: 'Hunger level' },
-      thirst: { value: 50, type: 'number', description: 'Thirst level' },
-      energy: { value: 80, type: 'number', description: 'Energy level' },
-      location: { value: 'Crashed Spaceship', type: 'string', description: 'Current location' },
+      health: { value: 100, type: 'number', description: t('game:initial.state.health', 'Health points') },
+      hunger: { value: 50, type: 'number', description: t('game:initial.state.hunger', 'Hunger level') },
+      thirst: { value: 50, type: 'number', description: t('game:initial.state.thirst', 'Thirst level') },
+      energy: { value: 80, type: 'number', description: t('game:initial.state.energy', 'Energy level') },
+      location: {
+        value: t('game:initial.locationValue', 'Crashed Spaceship'),
+        type: 'string',
+        description: t('game:initial.state.location', 'Current location'),
+      },
     },
     gameTime: 0,
   };
@@ -50,6 +54,7 @@ function createInitialContext(): Context {
  */
 gameRouter.post('/start', async (c) => {
   try {
+    const t = c.get('t') as I18nContext['t'];
     const sessionService = getSession();
     const storage = getStepStorage();
 
@@ -57,7 +62,7 @@ gameRouter.post('/start', async (c) => {
     const session = sessionService.createSession();
 
     // Create initial context
-    const initialContext = createInitialContext();
+    const initialContext = createInitialContext(t);
 
     // Create initial step
     const initialStep: Step = {
@@ -67,12 +72,14 @@ gameRouter.post('/start', async (c) => {
       inputType: 'action',
       context: initialContext,
       event: {
-        description:
+        description: t(
+          'game:initial.eventDescription',
           'Your spacecraft crashes during an emergency landing on an unknown planet. Alarms blare inside the cabin, and oxygen levels are dropping. You must find a way to survive and escape this desolate world.',
+        ),
         contextChanges: {},
       },
       preLogSummary: {
-        summary: 'Game starts. Player awakens in a crashed spaceship.',
+        summary: t('game:initial.summary', 'Game starts. Player awakens in a crashed spaceship.'),
         recentEvents: [],
         generatedAt: Date.now(),
       },
@@ -90,7 +97,8 @@ gameRouter.post('/start', async (c) => {
     });
   } catch (error: any) {
     console.error('Error starting game:', error);
-    return c.json({ error: { code: 'INTERNAL_ERROR', message: error.message } }, 500);
+    const t = c.get('t') as I18nContext['t'];
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: t('common:errors.internalError', error.message) } }, 500);
   }
 });
 
@@ -99,15 +107,16 @@ gameRouter.post('/start', async (c) => {
  */
 gameRouter.post('/step', async (c) => {
   try {
+    const t = c.get('t') as I18nContext['t'];
     const body = await c.req.json<ProcessStepRequest>();
     const { input, sessionId } = body;
 
     if (!input) {
-      return c.json({ error: { code: 'INVALID_INPUT', message: 'Input is required' } }, 400);
+      return c.json({ error: { code: 'INVALID_INPUT', message: t('common:errors.inputRequired', 'Input is required') } }, 400);
     }
 
     if (!sessionId) {
-      return c.json({ error: { code: 'INVALID_SESSION', message: 'Session ID is required' } }, 400);
+      return c.json({ error: { code: 'INVALID_SESSION', message: t('common:errors.sessionIdRequired', 'Session ID is required') } }, 400);
     }
 
     const sessionService = getSession();
@@ -116,7 +125,7 @@ gameRouter.post('/step', async (c) => {
     // Get session
     const session = sessionService.getSession(sessionId);
     if (!session) {
-      return c.json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }, 404);
+      return c.json({ error: { code: 'SESSION_NOT_FOUND', message: t('common:errors.sessionNotFound', 'Session not found') } }, 404);
     }
 
     // Load current context from last step
@@ -126,17 +135,20 @@ gameRouter.post('/step', async (c) => {
       if (lastStep) {
         currentContext = JSON.parse(JSON.stringify(lastStep.context));
       } else {
-        currentContext = createInitialContext();
+        currentContext = createInitialContext(t);
       }
     } else {
-      currentContext = createInitialContext();
+      currentContext = createInitialContext(t);
     }
 
     // Create processing chain
     const chain = createProcessingChain();
 
+    // Get language from context
+    const language = c.get('language') as string;
+
     // Prepare request object
-    const request = { input };
+    const request = { input, t, language };
 
     // Execute processing chain
     await chain.execute(request, currentContext);
@@ -165,7 +177,8 @@ gameRouter.post('/step', async (c) => {
     });
   } catch (error: any) {
     console.error('Error processing step:', error);
-    return c.json({ error: { code: 'INTERNAL_ERROR', message: error.message } }, 500);
+    const t = c.get('t') as I18nContext['t'];
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: t('common:errors.internalError', error.message) } }, 500);
   }
 });
 
@@ -174,6 +187,7 @@ gameRouter.post('/step', async (c) => {
  */
 gameRouter.get('/context/:sessionId', async (c) => {
   try {
+    const t = c.get('t') as I18nContext['t'];
     const sessionId = c.req.param('sessionId');
 
     const sessionService = getSession();
@@ -181,22 +195,23 @@ gameRouter.get('/context/:sessionId', async (c) => {
 
     const session = sessionService.getSession(sessionId);
     if (!session) {
-      return c.json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }, 404);
+      return c.json({ error: { code: 'SESSION_NOT_FOUND', message: t('common:errors.sessionNotFound', 'Session not found') } }, 404);
     }
 
     if (!session.currentStepId) {
-      return c.json({ context: createInitialContext() });
+      return c.json({ context: createInitialContext(t) });
     }
 
     const currentStep = await storage.getStep(session.currentStepId);
     if (!currentStep) {
-      return c.json({ context: createInitialContext() });
+      return c.json({ context: createInitialContext(t) });
     }
 
     return c.json({ context: currentStep.context });
   } catch (error: any) {
     console.error('Error getting context:', error);
-    return c.json({ error: { code: 'INTERNAL_ERROR', message: error.message } }, 500);
+    const t = c.get('t') as I18nContext['t'];
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: t('common:errors.internalError', error.message) } }, 500);
   }
 });
 
@@ -205,6 +220,7 @@ gameRouter.get('/context/:sessionId', async (c) => {
  */
 gameRouter.get('/history/:sessionId', async (c) => {
   try {
+    const t = c.get('t') as I18nContext['t'];
     const sessionId = c.req.param('sessionId');
 
     const sessionService = getSession();
@@ -212,7 +228,7 @@ gameRouter.get('/history/:sessionId', async (c) => {
 
     const session = sessionService.getSession(sessionId);
     if (!session) {
-      return c.json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }, 404);
+      return c.json({ error: { code: 'SESSION_NOT_FOUND', message: t('common:errors.sessionNotFound', 'Session not found') } }, 404);
     }
 
     const stepIds = sessionService.getStepHistory(sessionId);
@@ -221,7 +237,8 @@ gameRouter.get('/history/:sessionId', async (c) => {
     return c.json({ steps });
   } catch (error: any) {
     console.error('Error getting history:', error);
-    return c.json({ error: { code: 'INTERNAL_ERROR', message: error.message } }, 500);
+    const t = c.get('t') as I18nContext['t'];
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: t('common:errors.internalError', error.message) } }, 500);
   }
 });
 

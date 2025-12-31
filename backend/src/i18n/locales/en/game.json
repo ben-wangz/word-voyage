@@ -1,0 +1,14 @@
+{
+  "initial": {
+    "eventDescription": "Your spacecraft crashes during an emergency landing on an unknown planet. Alarms blare inside the cabin, and oxygen levels are dropping. You must find a way to survive and escape this desolate world.",
+    "summary": "Game starts. Player awakens in a crashed spaceship.",
+    "state": {
+      "health": "Health points",
+      "hunger": "Hunger level",
+      "thirst": "Thirst level",
+      "energy": "Energy level",
+      "location": "Current location"
+    },
+    "locationValue": "Crashed Spaceship"
+  }
+}

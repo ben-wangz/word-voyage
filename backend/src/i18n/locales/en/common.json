@@ -1,0 +1,9 @@
+{
+  "errors": {
+    "inputRequired": "Input is required",
+    "sessionIdRequired": "Session ID is required",
+    "sessionNotFound": "Session not found",
+    "internalError": "Internal server error",
+    "contextLimitExceeded": "Context field limit exceeded: {{current}} > {{max}}. Please remove some fields using mechanism questioning."
+  }
+}

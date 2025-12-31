@@ -1,8 +1,7 @@
 import { BaseNode, PluginNodeMetadata } from '../core/pluginNode.ts';
 import { Context, Event, ContextField } from '../types/index.ts';
 import { llmClient } from '../services/llmClient.ts';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { getI18n } from '../i18n/index.ts';
 
 /**
  * LLM Core Node
@@ -15,23 +14,18 @@ export class LLMCoreNode extends BaseNode {
     version: '1.0.0',
   };
 
-  private basePrompt: string;
-
-  constructor() {
-    super();
-    this.basePrompt = this.loadPromptTemplate();
-  }
-
   async process(request: unknown, context: Context, next: () => Promise<unknown>): Promise<unknown> {
     const req = request as any;
     console.log(`[LLMCoreNode] Generating event for input: ${req.userInput}`);
 
     try {
+      const language = req.language || 'en';
       const event = await this.generateEvent(
         req.userInput,
         req.inputType,
         context,
-        req.preLogSummary
+        req.preLogSummary,
+        language
       );
 
       console.log(`[LLMCoreNode] Event generated: ${event.description}`);
@@ -50,27 +44,19 @@ export class LLMCoreNode extends BaseNode {
   }
 
   /**
-   * Load prompt template from file
-   */
-  private loadPromptTemplate(): string {
-    try {
-      const promptPath = join(import.meta.dir, '../prompts/llmCore.txt');
-      return readFileSync(promptPath, 'utf-8');
-    } catch (error) {
-      console.error('[LLMCoreNode] Failed to load prompt template:', error);
-      throw new Error('Failed to load prompt template');
-    }
-  }
-
-  /**
    * Generate event using LLM service
    */
   private async generateEvent(
     userInput: string,
     inputType: 'action' | 'question',
     context: Context,
-    preLogSummary?: { summary: string; recentEvents: string[] }
+    preLogSummary: { summary: string; recentEvents: string[] } | undefined,
+    language: string
   ): Promise<Event> {
+    // Get prompt template for current language
+    const i18n = getI18n();
+    const basePrompt = i18n.t('prompts:llmCore.system', { lng: language });
+
     // Convert preLogSummary to snake_case for LLM service
     const preLogSummaryForService = preLogSummary
       ? {
@@ -81,7 +67,7 @@ export class LLMCoreNode extends BaseNode {
 
     // Build LLM request
     const llmRequest = llmClient.buildRequest(
-      this.basePrompt,
+      basePrompt,
       context,
       userInput,
       inputType,

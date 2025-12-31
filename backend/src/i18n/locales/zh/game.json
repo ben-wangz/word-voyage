@@ -1,0 +1,14 @@
+{
+  "initial": {
+    "eventDescription": "你的飞船在紧急降落未知星球时坠毁。驾驶舱内警报响起,氧气含量正在下降。你必须想办法在这个荒凉的世界中生存并逃离。",
+    "summary": "游戏开始。玩家在坠毁的飞船中醒来。",
+    "state": {
+      "health": "生命值",
+      "hunger": "饥饿度",
+      "thirst": "口渴度",
+      "energy": "精力值",
+      "location": "当前位置"
+    },
+    "locationValue": "坠毁的飞船"
+  }
+}

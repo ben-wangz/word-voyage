@@ -27,6 +27,7 @@ from .case.test_error_handling import (
     test_missing_input,
     test_missing_session_id
 )
+from .case.test_i18n import test_game_init_i18n
 
 
 def run_all_tests(service_url: str = None) -> bool:
@@ -131,6 +132,12 @@ def run_all_tests(service_url: str = None) -> bool:
                 test_missing_session_id(client, result)
             except Exception as e:
                 print(f"\nMissing session ID test failed: {e}")
+
+            # Test 12: i18n Game Initialization
+            try:
+                test_game_init_i18n(client, result)
+            except Exception as e:
+                print(f"\ni18n game initialization test failed: {e}")
 
     except ConnectionError as e:
         print(f"\n✗ Connection failed: {e}")

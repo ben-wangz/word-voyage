@@ -5,6 +5,8 @@ import { config } from './config.ts';
 import { initSession } from './services/session.ts';
 import { initStepStorage } from './services/stepStorage.ts';
 import { initRedis } from './services/redis.ts';
+import { initializeI18n } from './i18n/index.ts';
+import { i18nMiddleware } from './i18n/middleware.ts';
 import gameRouter from './routes/game.ts';
 import healthRouter from './routes/health.ts';
 
@@ -13,6 +15,7 @@ const app = new Hono();
 // Middleware
 app.use('*', logger());
 app.use('*', cors());
+app.use('*', i18nMiddleware());
 
 // Routes
 app.route('/api/game', gameRouter);
@@ -35,6 +38,10 @@ async function initialize() {
   console.log('Initializing backend services...');
 
   try {
+    // Initialize i18n
+    await initializeI18n();
+    console.log(`i18n initialized (default language: ${config.defaultLanguage})`);
+
     // Initialize session service
     initSession();
     console.log('Session service initialized');

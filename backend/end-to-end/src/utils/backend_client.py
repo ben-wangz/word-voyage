@@ -47,13 +47,18 @@ class BackendGameClient:
         response.raise_for_status()
         return response.json()
 
-    def start_game(self) -> Dict[str, Any]:
+    def start_game(self, lang: str = None) -> Dict[str, Any]:
         """Start a new game
+
+        Args:
+            lang: Optional language code (en, zh)
 
         Returns:
             Response with initial step and sessionId
         """
-        response = self.client.post(f"{self.service_url}/api/game/start")
+        url = f"{self.service_url}/api/game/start"
+        params = {"lang": lang} if lang else None
+        response = self.client.post(url, params=params)
         response.raise_for_status()
         return response.json()
 
@@ -104,16 +109,19 @@ class BackendGameClient:
             json=payload
         )
 
-    def get_context(self, session_id: str) -> Dict[str, Any]:
+    def get_context(self, session_id: str, lang: str = None) -> Dict[str, Any]:
         """Get current game context
 
         Args:
             session_id: Game session ID
+            lang: Optional language code (en, zh)
 
         Returns:
             Current context
         """
-        response = self.client.get(f"{self.service_url}/api/game/context/{session_id}")
+        url = f"{self.service_url}/api/game/context/{session_id}"
+        params = {"lang": lang} if lang else None
+        response = self.client.get(url, params=params)
         response.raise_for_status()
         return response.json()
 

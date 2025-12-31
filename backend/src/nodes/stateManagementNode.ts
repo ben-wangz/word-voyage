@@ -20,9 +20,15 @@ export class StateManagementNode extends BaseNode {
     // Validate field count
     const fieldCount = Object.keys(context.state).length;
     if (fieldCount > MAX_CONTEXT_FIELDS) {
-      throw new Error(
-        `Context field limit exceeded: ${fieldCount} > ${MAX_CONTEXT_FIELDS}. Please remove some fields using mechanism questioning.`,
-      );
+      const req = request as any;
+      const t = req.t;
+      const errorMessage = t
+        ? t('common:errors.contextLimitExceeded', `Context field limit exceeded: {{current}} > {{max}}. Please remove some fields using mechanism questioning.`, {
+            current: fieldCount,
+            max: MAX_CONTEXT_FIELDS,
+          })
+        : `Context field limit exceeded: ${fieldCount} > ${MAX_CONTEXT_FIELDS}. Please remove some fields using mechanism questioning.`;
+      throw new Error(errorMessage);
     }
 
     // Log current state for debugging

@@ -151,3 +151,15 @@ export interface LLMGenerationResponse {
   validation_errors?: ValidationResult[];
   fix_suggestion?: string;
 }
+
+// ==========================================
+// i18n Types
+// ==========================================
+
+/**
+ * i18n context variables for Hono
+ */
+export interface I18nContext {
+  language: string;
+  t: (key: string, defaultValue?: string, options?: Record<string, any>) => string;
+}
