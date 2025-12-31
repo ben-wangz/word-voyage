@@ -13,14 +13,17 @@ Comprehensive browser-based end-to-end tests for the WordVoyage frontend applica
 
 - Podman (or Docker)
 - Backend service running on port 8080
+- set envs
+    * SERVICE_OPENAI_BASE_URL
+    * SERVICE_OPENAI_API_KEY
+    * SERVICE_OPENAI_MODEL
 
 ## Usage
 
 ### Run All Tests (with auto-start frontend)
 
 ```bash
-cd frontend/end-to-end
-./test.sh
+frontend/end-to-end/test.sh
 ```
 
 This will:
@@ -28,19 +31,6 @@ This will:
 2. Start Browserless Chromium
 3. Run all test cases
 4. Clean up all services and containers
-
-### Options
-
-```bash
-# Skip building frontend image (use existing)
-./test.sh --skip-build
-
-# Only cleanup containers (without running tests)
-./test.sh --cleanup-only
-
-# Show help
-./test.sh --help
-```
 
 ### View Screenshots
 
@@ -59,51 +49,6 @@ build/screenshots/
     │   └── 03_event_received.png
     └── ...
 ```
-
-## Test Cases
-
-### 1. test_game_initialization
-- Page loads successfully
-- Event description appears
-- Context state is displayed
-- Input form is accessible
-- No error messages
-
-### 2. test_single_user_input
-- User input submission works
-- New event appears after input
-- History count increases
-
-### 3. test_multiple_sequential_inputs
-- Multiple inputs processed sequentially
-- State updates for each input
-- History grows correctly
-
-### 4. test_context_update_after_input
-- Context state updates after actions
-- State values are valid
-
-### 5. test_history_list_updates
-- History list grows with each action
-- Count matches expected
-
-### 6. test_event_display_updates
-- Event text updates properly
-- Events are different (not identical)
-
-### 7. test_context_display_structure
-- Context has proper structure
-- All fields are valid types
-
-## Configuration
-
-Environment variables (set in test.sh or override):
-
-- `FRONTEND_URL`: Frontend service URL (default: http://localhost:3000)
-- `BROWSER_WS_URL`: Browserless WebSocket URL (default: ws://localhost:3003/...)
-- `SCREENSHOT_DIR`: Screenshot output directory (default: /app/screenshots)
-- `TEST_TIMEOUT`: Test timeout in seconds (default: 30)
-- `PAGE_LOAD_TIMEOUT`: Page load timeout in seconds (default: 15)
 
 ## Development
 
