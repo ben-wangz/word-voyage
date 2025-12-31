@@ -14,9 +14,7 @@ class Config:
     SCREENSHOT_DIR = os.getenv("SCREENSHOT_DIR", "/app/screenshots")
 
     # Timeouts (in seconds)
-    TEST_TIMEOUT = int(os.getenv("TEST_TIMEOUT", "30"))
-    PAGE_LOAD_TIMEOUT = int(os.getenv("PAGE_LOAD_TIMEOUT", "15"))
-    WAIT_FOR_EVENT_TIMEOUT = int(os.getenv("WAIT_FOR_EVENT_TIMEOUT", "10"))
+    PAGE_LOAD_TIMEOUT = int(os.getenv("PAGE_LOAD_TIMEOUT", "30"))
 
     # Browser settings
     HEADLESS = os.getenv("HEADLESS", "true").lower() == "true"
@@ -43,8 +41,6 @@ class Config:
         print(f"Frontend URL:         {cls.FRONTEND_URL}")
         print(f"Browser WS URL:       {cls.BROWSER_WS_URL}")
         print(f"Screenshot Dir:       {cls.SCREENSHOT_DIR}")
-        print(f"Test Timeout:         {cls.TEST_TIMEOUT}s")
         print(f"Page Load Timeout:    {cls.PAGE_LOAD_TIMEOUT}s")
-        print(f"Event Wait Timeout:   {cls.WAIT_FOR_EVENT_TIMEOUT}s")
         print(f"Headless Mode:        {cls.HEADLESS}")
         print("="*60 + "\n")
