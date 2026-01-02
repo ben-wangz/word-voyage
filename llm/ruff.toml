@@ -1,0 +1,5 @@
+[lint]
+select = ["F", "E"]
+ignore = []
+
+[lint.per-file-ignores]

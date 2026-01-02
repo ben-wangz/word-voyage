@@ -24,7 +24,7 @@ app = FastAPI(title="OpenAI LLM Service", version="1.0.0")
 async def generate_structured_data(request: StructuredGenerationRequest):
     """Generate structured data using OpenAI API"""
     try:
-        logger.info(f"Processing structured generation request")
+        logger.info("Processing structured generation request")
 
         # Validate context length
         if len(request.context) > CONTEXT_MAX_FIELDS:

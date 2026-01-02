@@ -1,9 +1,9 @@
 # OpenAI Client Utility
 import json
 import logging
-from typing import Dict, Any, Iterator
+from typing import Dict, Any
 from openai import OpenAI
-from .config import OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL, LOG_LEVEL, LLM_MAX_TOKENS
+from .config import OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL, LLM_MAX_TOKENS
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +203,7 @@ def generate_structured(
                 try:
                     json.loads(potential_json)
                     return potential_json
-                except:
+                except (json.JSONDecodeError, ValueError):
                     pass
 
             # Method 4: Try the whole text as last resort
