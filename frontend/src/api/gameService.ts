@@ -26,6 +26,16 @@ export interface GameResponse {
 }
 
 class GameService {
+  private handleError(response: Response): never {
+    if (response.status === 401) {
+      throw new Error('SESSION_EXPIRED');
+    }
+    if (response.status === 403) {
+      throw new Error('ACCESS_DENIED');
+    }
+    throw new Error(`Request failed: ${response.statusText}`);
+  }
+
   async startGame(language?: string): Promise<GameResponse> {
     const url = new URL(`${window.location.origin}${API_BASE}/start`);
     if (language) {
@@ -37,16 +47,17 @@ class GameService {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to start game: ${response.statusText}`);
+      this.handleError(response);
     }
 
     return response.json();
   }
 
-  async processStep(input: string, sessionId: string, language?: string): Promise<GameResponse> {
+  async processStep(input: string, language?: string): Promise<GameResponse> {
     const url = new URL(`${window.location.origin}${API_BASE}/step`);
     if (language) {
       url.searchParams.append('lang', language);
@@ -57,35 +68,38 @@ class GameService {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ input, sessionId }),
+      credentials: 'include',
+      body: JSON.stringify({ input }),
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to process step: ${response.statusText}`);
+      this.handleError(response);
     }
 
     return response.json();
   }
 
-  async getContext(sessionId: string): Promise<any> {
-    const response = await fetch(`${API_BASE}/context/${sessionId}`, {
+  async getContext(): Promise<any> {
+    const response = await fetch(`${API_BASE}/context`, {
       method: 'GET',
+      credentials: 'include',
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to get context: ${response.statusText}`);
+      this.handleError(response);
     }
 
     return response.json();
   }
 
-  async getHistory(sessionId: string): Promise<{ steps: Step[] }> {
-    const response = await fetch(`${API_BASE}/history/${sessionId}`, {
+  async getHistory(): Promise<{ steps: Step[] }> {
+    const response = await fetch(`${API_BASE}/history`, {
       method: 'GET',
+      credentials: 'include',
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to get history: ${response.statusText}`);
+      this.handleError(response);
     }
 
     return response.json();

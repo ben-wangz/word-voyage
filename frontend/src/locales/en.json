@@ -23,6 +23,8 @@
     "you": "You: "
   },
   "error": {
-    "prefix": "Error:"
+    "prefix": "Error:",
+    "sessionExpired": "Session expired. Please refresh the page to restart.",
+    "accessDenied": "Access denied to this resource."
   }
 }

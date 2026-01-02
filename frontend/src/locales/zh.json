@@ -23,6 +23,8 @@
     "you": "你: "
   },
   "error": {
-    "prefix": "错误:"
+    "prefix": "错误:",
+    "sessionExpired": "会话已过期，请刷新页面重新开始。",
+    "accessDenied": "无权访问此资源。"
   }
 }

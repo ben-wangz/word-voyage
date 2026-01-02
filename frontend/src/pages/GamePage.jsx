@@ -9,7 +9,6 @@ import { LanguageSwitcher } from '../components/LanguageSwitcher';
 
 export function GamePage() {
   const { t, i18n } = useTranslation();
-  const [sessionId, setSessionId] = useState(null);
   const [currentStep, setCurrentStep] = useState(null);
   const [context, setContext] = useState(null);
   const [history, setHistory] = useState([]);
@@ -20,17 +19,26 @@ export function GamePage() {
     initializeGame();
   }, []);
 
+  const handleError = (err) => {
+    if (err.message === 'SESSION_EXPIRED') {
+      setError(t('error.sessionExpired'));
+    } else if (err.message === 'ACCESS_DENIED') {
+      setError(t('error.accessDenied'));
+    } else {
+      setError(err.message);
+    }
+  };
+
   const initializeGame = async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await gameService.startGame(i18n.language);
-      setSessionId(response.sessionId);
       setCurrentStep(response.step);
       setContext(response.step.context);
       setHistory([response.step]);
     } catch (err) {
-      setError(err.message);
+      handleError(err);
       console.error('Failed to initialize game:', err);
     } finally {
       setLoading(false);
@@ -38,17 +46,15 @@ export function GamePage() {
   };
 
   const handleSubmitInput = async (input) => {
-    if (!sessionId) return;
-
     try {
       setLoading(true);
       setError(null);
-      const response = await gameService.processStep(input, sessionId, i18n.language);
+      const response = await gameService.processStep(input, i18n.language);
       setCurrentStep(response.step);
       setContext(response.step.context);
       setHistory((prev) => [...prev, response.step]);
     } catch (err) {
-      setError(err.message);
+      handleError(err);
       console.error('Failed to process step:', err);
     } finally {
       setLoading(false);
