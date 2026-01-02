@@ -8,8 +8,8 @@ export function sessionRefreshMiddleware() {
     const sessionId = c.get('sessionId');
     if (sessionId) {
       const sessionService = getSession();
-      await sessionService.refreshSession(sessionId).catch(() => {
-        // Ignore errors
+      await sessionService.refreshSession(sessionId).catch((error) => {
+        console.error('Session refresh failed:', error);
       });
     }
   };

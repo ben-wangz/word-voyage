@@ -32,6 +32,7 @@ export function authMiddleware(options: { required?: boolean } = {}) {
       if (options.required) {
         return c.json({ error: { code: 'INVALID_TOKEN', message: 'Invalid or expired token' } }, 401);
       }
+      console.warn('Optional auth failed:', error);
       await next();
     }
   };

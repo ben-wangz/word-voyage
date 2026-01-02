@@ -95,7 +95,7 @@ export class AuthService {
       const payload = jwt.verify(token, this.jwtConfig.secret) as { tokenId: string };
       await this.storage.delete(`refresh:${payload.tokenId}`);
     } catch (error) {
-      // Ignore errors
+      console.error('Failed to revoke refresh token:', error);
     }
   }
 
