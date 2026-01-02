@@ -16,8 +16,9 @@ class BackendGameClient:
         """
         self.service_url = service_url.rstrip("/")
         self.timeout = timeout
-        self.client = httpx.Client(timeout=timeout)
+        self.client = httpx.Client(timeout=timeout, follow_redirects=True)
         self.service_name = None
+        self._session_id = None
 
         # Get service info
         try:
@@ -60,22 +61,28 @@ class BackendGameClient:
         params = {"lang": lang} if lang else None
         response = self.client.post(url, params=params)
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        self._session_id = result.get("sessionId")
+        return result
 
-    def process_step(self, session_id: str, user_input: str) -> Dict[str, Any]:
+    def get_session_id(self) -> str:
+        """Get current session ID from cookie
+
+        Returns:
+            Current session ID
+        """
+        return self._session_id
+
+    def process_step(self, user_input: str) -> Dict[str, Any]:
         """Process user input step
 
         Args:
-            session_id: Game session ID
             user_input: User input text
 
         Returns:
             Response with new step and sessionId
         """
-        payload = {
-            "sessionId": session_id,
-            "input": user_input
-        }
+        payload = {"input": user_input}
         response = self.client.post(
             f"{self.service_url}/api/game/step",
             json=payload
@@ -109,31 +116,27 @@ class BackendGameClient:
             json=payload
         )
 
-    def get_context(self, session_id: str, lang: str = None) -> Dict[str, Any]:
+    def get_context(self, lang: str = None) -> Dict[str, Any]:
         """Get current game context
 
         Args:
-            session_id: Game session ID
             lang: Optional language code (en, zh)
 
         Returns:
             Current context
         """
-        url = f"{self.service_url}/api/game/context/{session_id}"
+        url = f"{self.service_url}/api/game/context/{self._session_id}"
         params = {"lang": lang} if lang else None
         response = self.client.get(url, params=params)
         response.raise_for_status()
         return response.json()
 
-    def get_history(self, session_id: str) -> Dict[str, Any]:
+    def get_history(self) -> Dict[str, Any]:
         """Get game step history
-
-        Args:
-            session_id: Game session ID
 
         Returns:
             Response with steps array
         """
-        response = self.client.get(f"{self.service_url}/api/game/history/{session_id}")
+        response = self.client.get(f"{self.service_url}/api/game/history/{self._session_id}")
         response.raise_for_status()
         return response.json()

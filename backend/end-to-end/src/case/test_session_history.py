@@ -5,7 +5,7 @@ from ..utils.backend_client import BackendGameClient
 from ..utils.test_result import TestResult
 
 
-def test_get_current_context(client: BackendGameClient, result: TestResult, session_id: str):
+def test_get_current_context(client: BackendGameClient, result: TestResult):
     """Test GET /api/game/context/:sessionId endpoint"""
     test_name = "Get Current Context"
     start_time = time.time()
@@ -15,9 +15,10 @@ def test_get_current_context(client: BackendGameClient, result: TestResult, sess
         print(f"Running: {test_name}")
         print('='*60)
 
+        session_id = client.get_session_id()
         print(f"\nGetting context for session: {session_id}")
 
-        response = client.get_context(session_id)
+        response = client.get_context()
 
         print(f"\nContext response:")
 
@@ -46,7 +47,7 @@ def test_get_current_context(client: BackendGameClient, result: TestResult, sess
         raise
 
 
-def test_get_step_history(client: BackendGameClient, result: TestResult, session_id: str):
+def test_get_step_history(client: BackendGameClient, result: TestResult):
     """Test GET /api/game/history/:sessionId endpoint"""
     test_name = "Get Step History"
     start_time = time.time()
@@ -56,9 +57,10 @@ def test_get_step_history(client: BackendGameClient, result: TestResult, session
         print(f"Running: {test_name}")
         print('='*60)
 
+        session_id = client.get_session_id()
         print(f"\nGetting history for session: {session_id}")
 
-        response = client.get_history(session_id)
+        response = client.get_history()
 
         print(f"\nHistory response:")
 
@@ -110,13 +112,16 @@ def test_session_isolation(client: BackendGameClient, result: TestResult):
 
         print("\nCreating two separate game sessions...")
 
+        # Create second client for isolated session
+        client2 = BackendGameClient(client.service_url, client.timeout)
+
         # Start first game
         game1 = client.start_game()
         session1_id = game1.get('sessionId')
         print(f"  Session 1: {session1_id}")
 
         # Start second game
-        game2 = client.start_game()
+        game2 = client2.start_game()
         session2_id = game2.get('sessionId')
         print(f"  Session 2: {session2_id}")
 
@@ -126,15 +131,15 @@ def test_session_isolation(client: BackendGameClient, result: TestResult):
         # Process different steps in each session
         print("\nProcessing steps in different sessions...")
 
-        response1 = client.process_step(session1_id, "Action in session 1")
+        response1 = client.process_step("Action in session 1")
         step1 = response1.get('step')
 
-        response2 = client.process_step(session2_id, "Action in session 2")
+        response2 = client2.process_step("Action in session 2")
         step2 = response2.get('step')
 
         # Get histories
-        history1 = client.get_history(session1_id)
-        history2 = client.get_history(session2_id)
+        history1 = client.get_history()
+        history2 = client2.get_history()
 
         steps1 = history1.get('steps', [])
         steps2 = history2.get('steps', [])
@@ -156,6 +161,7 @@ def test_session_isolation(client: BackendGameClient, result: TestResult):
 
         print("  ✓ Sessions are properly isolated")
 
+        client2.close()
         result.add(test_name, "success", time.time() - start_time)
 
     except Exception as e:

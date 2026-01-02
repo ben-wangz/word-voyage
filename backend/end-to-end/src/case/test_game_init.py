@@ -72,7 +72,6 @@ def test_start_game(client: BackendGameClient, result: TestResult):
         print("  ✓ Game started successfully with correct initial state")
 
         result.add(test_name, "success", time.time() - start_time)
-        return session_id
 
     except Exception as e:
         result.add(test_name, "failed", time.time() - start_time, str(e))

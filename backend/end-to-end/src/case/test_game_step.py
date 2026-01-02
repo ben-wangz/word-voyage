@@ -6,7 +6,7 @@ from ..utils.backend_client import BackendGameClient
 from ..utils.test_result import TestResult
 
 
-def test_process_action_step(client: BackendGameClient, result: TestResult, session_id: str):
+def test_process_action_step(client: BackendGameClient, result: TestResult):
     """Test POST /api/game/step endpoint with action input"""
     test_name = "Process Action Step"
     start_time = time.time()
@@ -19,7 +19,7 @@ def test_process_action_step(client: BackendGameClient, result: TestResult, sess
         user_input = "Look around and assess the situation"
         print(f"\nProcessing action: '{user_input}'")
 
-        response = client.process_step(session_id, user_input)
+        response = client.process_step(user_input)
 
         print(f"\nProcess step response:")
         print(f"  Session ID: {response.get('sessionId')}")
@@ -28,7 +28,7 @@ def test_process_action_step(client: BackendGameClient, result: TestResult, sess
         # Validate response structure
         assert 'sessionId' in response, "Expected sessionId in response"
         assert 'step' in response, "Expected step in response"
-        assert response.get('sessionId') == session_id, "Session ID should match"
+        assert response.get('sessionId') == client.get_session_id(), "Session ID should match"
 
         step = response.get('step')
 
@@ -80,7 +80,7 @@ def test_process_action_step(client: BackendGameClient, result: TestResult, sess
         raise
 
 
-def test_context_changes_over_steps(client: BackendGameClient, result: TestResult, session_id: str):
+def test_context_changes_over_steps(client: BackendGameClient, result: TestResult):
     """Test that context is updated over multiple steps"""
     test_name = "Context Changes Over Steps"
     start_time = time.time()
@@ -91,7 +91,7 @@ def test_context_changes_over_steps(client: BackendGameClient, result: TestResul
         print('='*60)
 
         # Get initial context
-        initial_response = client.get_context(session_id)
+        initial_response = client.get_context()
         initial_context = initial_response.get('context', {})
         initial_state = initial_context.get('state', {})
         initial_values = {k: v.get('value') for k, v in initial_state.items()}
@@ -108,7 +108,7 @@ def test_context_changes_over_steps(client: BackendGameClient, result: TestResul
         ]
 
         for action in actions:
-            response = client.process_step(session_id, action)
+            response = client.process_step(action)
             step = response.get('step')
 
             print(f"\nAfter action: '{action}'")
@@ -120,7 +120,7 @@ def test_context_changes_over_steps(client: BackendGameClient, result: TestResul
                 print(f"  {key}: {value}")
 
         # Get final context
-        final_response = client.get_context(session_id)
+        final_response = client.get_context()
         final_context = final_response.get('context', {})
         final_state = final_context.get('state', {})
         final_values = {k: v.get('value') for k, v in final_state.items()}
@@ -141,7 +141,7 @@ def test_context_changes_over_steps(client: BackendGameClient, result: TestResul
         raise
 
 
-def test_multiple_steps_sequential(client: BackendGameClient, result: TestResult, session_id: str):
+def test_multiple_steps_sequential(client: BackendGameClient, result: TestResult):
     """Test processing multiple steps sequentially"""
     test_name = "Multiple Steps Sequential"
     start_time = time.time()
@@ -156,7 +156,7 @@ def test_multiple_steps_sequential(client: BackendGameClient, result: TestResult
 
         for i in range(step_count):
             action = f"Exploration step {i+1}"
-            response = client.process_step(session_id, action)
+            response = client.process_step(action)
 
             assert 'step' in response, f"Step {i+1}: Expected step in response"
             step = response.get('step')
