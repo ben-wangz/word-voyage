@@ -55,16 +55,17 @@ function createInitialContext(t: (key: string, defaultValue?: string) => string)
 gameRouter.post('/start', async (c) => {
   try {
     const t = c.get('t') as I18nContext['t'];
+    const sessionId = c.get('sessionId') as string;
     const sessionService = getSession();
     const storage = getStepStorage();
 
-    // Create new session
-    const session = sessionService.createSession();
+    const session = await sessionService.getSession(sessionId);
+    if (!session) {
+      return c.json({ error: { code: 'SESSION_NOT_FOUND', message: t('common:errors.sessionNotFound', 'Session not found') } }, 404);
+    }
 
-    // Create initial context
     const initialContext = createInitialContext(t);
 
-    // Create initial step
     const initialStep: Step = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
@@ -85,15 +86,12 @@ gameRouter.post('/start', async (c) => {
       },
     };
 
-    // Save initial step
     await storage.saveStep(initialStep);
-
-    // Update session
-    sessionService.updateCurrentStep(session.sessionId, initialStep.id);
+    await sessionService.updateCurrentStep(sessionId, initialStep.id);
 
     return c.json({
       step: initialStep,
-      sessionId: session.sessionId,
+      sessionId,
     });
   } catch (error: any) {
     console.error('Error starting game:', error);
@@ -109,23 +107,24 @@ gameRouter.post('/step', async (c) => {
   try {
     const t = c.get('t') as I18nContext['t'];
     const body = await c.req.json<ProcessStepRequest>();
-    const { input, sessionId } = body;
+    const { input } = body;
 
     if (!input) {
       return c.json({ error: { code: 'INVALID_INPUT', message: t('common:errors.inputRequired', 'Input is required') } }, 400);
     }
 
-    if (!sessionId) {
-      return c.json({ error: { code: 'INVALID_SESSION', message: t('common:errors.sessionIdRequired', 'Session ID is required') } }, 400);
-    }
-
+    const sessionId = c.get('sessionId') as string;
+    const userId = c.get('userId') as string;
     const sessionService = getSession();
     const storage = getStepStorage();
 
-    // Get session
-    const session = sessionService.getSession(sessionId);
+    const session = await sessionService.getSession(sessionId);
     if (!session) {
       return c.json({ error: { code: 'SESSION_NOT_FOUND', message: t('common:errors.sessionNotFound', 'Session not found') } }, 404);
+    }
+
+    if (session.userId !== userId) {
+      return c.json({ error: { code: 'FORBIDDEN', message: t('common:errors.forbidden', 'Access denied') } }, 403);
     }
 
     // Load current context from last step
@@ -169,7 +168,7 @@ gameRouter.post('/step', async (c) => {
     await storage.saveStep(newStep);
 
     // Update session
-    sessionService.updateCurrentStep(sessionId, newStep.id);
+    await sessionService.updateCurrentStep(sessionId, newStep.id);
 
     return c.json({
       step: newStep,
@@ -189,13 +188,18 @@ gameRouter.get('/context/:sessionId', async (c) => {
   try {
     const t = c.get('t') as I18nContext['t'];
     const sessionId = c.req.param('sessionId');
+    const userId = c.get('userId') as string;
 
     const sessionService = getSession();
     const storage = getStepStorage();
 
-    const session = sessionService.getSession(sessionId);
+    const session = await sessionService.getSession(sessionId);
     if (!session) {
       return c.json({ error: { code: 'SESSION_NOT_FOUND', message: t('common:errors.sessionNotFound', 'Session not found') } }, 404);
+    }
+
+    if (session.userId !== userId) {
+      return c.json({ error: { code: 'FORBIDDEN', message: t('common:errors.forbidden', 'Access denied') } }, 403);
     }
 
     if (!session.currentStepId) {
@@ -222,16 +226,21 @@ gameRouter.get('/history/:sessionId', async (c) => {
   try {
     const t = c.get('t') as I18nContext['t'];
     const sessionId = c.req.param('sessionId');
+    const userId = c.get('userId') as string;
 
     const sessionService = getSession();
     const storage = getStepStorage();
 
-    const session = sessionService.getSession(sessionId);
+    const session = await sessionService.getSession(sessionId);
     if (!session) {
       return c.json({ error: { code: 'SESSION_NOT_FOUND', message: t('common:errors.sessionNotFound', 'Session not found') } }, 404);
     }
 
-    const stepIds = sessionService.getStepHistory(sessionId);
+    if (session.userId !== userId) {
+      return c.json({ error: { code: 'FORBIDDEN', message: t('common:errors.forbidden', 'Access denied') } }, 403);
+    }
+
+    const stepIds = await sessionService.getStepHistory(sessionId);
     const steps = await storage.getSteps(stepIds);
 
     return c.json({ steps });

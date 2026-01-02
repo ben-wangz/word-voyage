@@ -1,54 +1,54 @@
-import { Step } from '../types/index.ts';
+import type { IStorageAdapter } from './storage/index.ts';
+import { config } from '../config.ts';
 
-/**
- * Session Management Service
- * Manage user sessions and current game state
- */
 export interface SessionData {
   sessionId: string;
+  userId: string;
   createdAt: number;
   lastAccessedAt: number;
   currentStepId?: string;
-  stepHistory: string[]; // Step IDs
+  stepHistory: string[];
 }
 
 export class SessionService {
-  private sessions: Map<string, SessionData> = new Map();
+  private storage: IStorageAdapter;
 
-  /**
- * Create new session
- */
-  createSession(): SessionData {
+  constructor(storage: IStorageAdapter) {
+    this.storage = storage;
+  }
+
+  async createSession(userId: string): Promise<SessionData> {
     const sessionId = crypto.randomUUID();
     const now = Date.now();
 
     const session: SessionData = {
       sessionId,
+      userId,
       createdAt: now,
       lastAccessedAt: now,
       stepHistory: [],
     };
 
-    this.sessions.set(sessionId, session);
+    await this.storage.set(`session:${sessionId}`, JSON.stringify(session), config.ttl.session);
+    await this.storage.sadd(`user:${userId}:sessions`, sessionId);
+
     return session;
   }
 
-  /**
- * Get session
- */
-  getSession(sessionId: string): SessionData | null {
-    const session = this.sessions.get(sessionId);
-    if (session) {
-      session.lastAccessedAt = Date.now();
-    }
-    return session || null;
+  async getSession(sessionId: string): Promise<SessionData | null> {
+    const data = await this.storage.get(`session:${sessionId}`);
+    if (!data) return null;
+
+    const session: SessionData = JSON.parse(data);
+    session.lastAccessedAt = Date.now();
+
+    await this.storage.set(`session:${sessionId}`, JSON.stringify(session), config.ttl.session);
+
+    return session;
   }
 
-  /**
- * Update current step
- */
-  updateCurrentStep(sessionId: string, stepId: string): void {
-    const session = this.sessions.get(sessionId);
+  async updateCurrentStep(sessionId: string, stepId: string): Promise<void> {
+    const session = await this.getSession(sessionId);
     if (!session) {
       throw new Error(`Session not found: ${sessionId}`);
     }
@@ -56,46 +56,39 @@ export class SessionService {
     session.currentStepId = stepId;
     session.stepHistory.push(stepId);
     session.lastAccessedAt = Date.now();
+
+    await this.storage.set(`session:${sessionId}`, JSON.stringify(session), config.ttl.session);
   }
 
-  /**
- * Get step history
- */
-  getStepHistory(sessionId: string): string[] {
-    const session = this.sessions.get(sessionId);
+  async getStepHistory(sessionId: string): Promise<string[]> {
+    const session = await this.getSession(sessionId);
     if (!session) {
       throw new Error(`Session not found: ${sessionId}`);
     }
     return [...session.stepHistory];
   }
 
-  /**
- * Delete session
- */
-  deleteSession(sessionId: string): void {
-    this.sessions.delete(sessionId);
+  async deleteSession(sessionId: string): Promise<void> {
+    const session = await this.getSession(sessionId);
+    if (session) {
+      await this.storage.srem(`user:${session.userId}:sessions`, sessionId);
+    }
+    await this.storage.delete(`session:${sessionId}`);
   }
 
-  /**
- * Clean up expired sessions (7 days)
- */
-  cleanupExpiredSessions(): void {
-    const now = Date.now();
-    const maxAge = 7 * 24 * 60 * 60 * 1000;
+  async getUserSessions(userId: string): Promise<string[]> {
+    return await this.storage.smembers(`user:${userId}:sessions`);
+  }
 
-    for (const [sessionId, session] of this.sessions.entries()) {
-      if (now - session.lastAccessedAt > maxAge) {
-        this.sessions.delete(sessionId);
-      }
-    }
+  async refreshSession(sessionId: string): Promise<void> {
+    await this.storage.expire(`session:${sessionId}`, config.ttl.session);
   }
 }
 
-// Global singleton
 let sessionInstance: SessionService | null = null;
 
-export function initSession(): SessionService {
-  sessionInstance = new SessionService();
+export function initSession(storage: IStorageAdapter): SessionService {
+  sessionInstance = new SessionService(storage);
   return sessionInstance;
 }
 
