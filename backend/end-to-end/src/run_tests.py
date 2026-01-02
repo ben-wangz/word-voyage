@@ -27,6 +27,19 @@ from .case.test_error_handling import (
     test_missing_input
 )
 from .case.test_i18n import test_game_init_i18n
+from .case.test_auth import (
+    test_anonymous_to_registered,
+    test_user_login,
+    test_logout,
+    test_token_refresh,
+    test_cross_user_session_access,
+    test_anonymous_session_isolation,
+    test_register_preserves_ownership,
+    test_invalid_credentials,
+    test_duplicate_email,
+    test_empty_password,
+    test_malformed_email
+)
 
 
 def run_all_tests(service_url: str = None) -> bool:
@@ -131,6 +144,62 @@ def run_all_tests(service_url: str = None) -> bool:
                 test_game_init_i18n(client, result)
             except Exception as e:
                 print(f"\ni18n game initialization test failed: {e}")
+
+            # Test 12-22: Authentication tests
+            try:
+                test_anonymous_to_registered(client, result)
+            except Exception as e:
+                print(f"\nAnonymous to registered test failed: {e}")
+
+            try:
+                test_user_login(client, result)
+            except Exception as e:
+                print(f"\nUser login test failed: {e}")
+
+            try:
+                test_logout(client, result)
+            except Exception as e:
+                print(f"\nLogout test failed: {e}")
+
+            try:
+                test_token_refresh(client, result)
+            except Exception as e:
+                print(f"\nToken refresh test failed: {e}")
+
+            try:
+                test_cross_user_session_access(client, result)
+            except Exception as e:
+                print(f"\nCross-user session access test failed: {e}")
+
+            try:
+                test_anonymous_session_isolation(client, result)
+            except Exception as e:
+                print(f"\nAnonymous session isolation test failed: {e}")
+
+            try:
+                test_register_preserves_ownership(client, result)
+            except Exception as e:
+                print(f"\nRegister preserves ownership test failed: {e}")
+
+            try:
+                test_invalid_credentials(client, result)
+            except Exception as e:
+                print(f"\nInvalid credentials test failed: {e}")
+
+            try:
+                test_duplicate_email(client, result)
+            except Exception as e:
+                print(f"\nDuplicate email test failed: {e}")
+
+            try:
+                test_empty_password(client, result)
+            except Exception as e:
+                print(f"\nEmpty password test failed: {e}")
+
+            try:
+                test_malformed_email(client, result)
+            except Exception as e:
+                print(f"\nMalformed email test failed: {e}")
 
     except ConnectionError as e:
         print(f"\n✗ Connection failed: {e}")

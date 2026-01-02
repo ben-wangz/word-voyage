@@ -140,3 +140,106 @@ class BackendGameClient:
         response = self.client.get(f"{self.service_url}/api/game/history/{self._session_id}")
         response.raise_for_status()
         return response.json()
+
+    def register_user(self, email: str, password: str) -> Dict[str, Any]:
+        """Register anonymous user with email/password
+
+        Args:
+            email: User email
+            password: User password
+
+        Returns:
+            Response with userId, email, accessToken, refreshToken
+        """
+        response = self.client.post(
+            f"{self.service_url}/api/auth/register",
+            json={"email": email, "password": password}
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def login_user(self, email: str, password: str) -> Dict[str, Any]:
+        """Login with email/password
+
+        Args:
+            email: User email
+            password: User password
+
+        Returns:
+            Response with userId, email, accessToken, refreshToken
+        """
+        response = self.client.post(
+            f"{self.service_url}/api/auth/login",
+            json={"email": email, "password": password}
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def logout(self, refresh_token: str) -> Dict[str, Any]:
+        """Logout and revoke refresh token
+
+        Args:
+            refresh_token: Refresh token to revoke
+
+        Returns:
+            Response with success message
+        """
+        response = self.client.post(
+            f"{self.service_url}/api/auth/logout",
+            json={"refreshToken": refresh_token}
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def refresh_token(self, refresh_token: str) -> Dict[str, Any]:
+        """Refresh access token
+
+        Args:
+            refresh_token: Refresh token
+
+        Returns:
+            Response with new accessToken and refreshToken
+        """
+        response = self.client.post(
+            f"{self.service_url}/api/auth/refresh",
+            json={"refreshToken": refresh_token}
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def set_jwt_header(self, access_token: str):
+        """Set JWT Authorization header
+
+        Args:
+            access_token: JWT access token
+        """
+        self.client.headers["Authorization"] = f"Bearer {access_token}"
+
+    def clear_jwt_header(self):
+        """Clear JWT Authorization header"""
+        self.client.headers.pop("Authorization", None)
+
+    def get_context_by_id(self, session_id: str, lang: str = None) -> httpx.Response:
+        """Get context by session ID (raw response for testing)
+
+        Args:
+            session_id: Session ID
+            lang: Optional language code
+
+        Returns:
+            Raw HTTP response
+        """
+        url = f"{self.service_url}/api/game/context/{session_id}"
+        params = {"lang": lang} if lang else None
+        return self.client.get(url, params=params)
+
+    def get_history_by_id(self, session_id: str) -> httpx.Response:
+        """Get history by session ID (raw response for testing)
+
+        Args:
+            session_id: Session ID
+
+        Returns:
+            Raw HTTP response
+        """
+        return self.client.get(f"{self.service_url}/api/game/history/{session_id}")
