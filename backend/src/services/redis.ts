@@ -41,7 +41,7 @@ export class RedisService {
   /**
  * Set value
  */
-  async set(key: string, value: unknown, ttl?: number): Promise<void> {
+  async set(key: string, _value: unknown, _ttl?: number): Promise<void> {
     if (!this.connected) {
       throw new Error('Redis not connected');
     }

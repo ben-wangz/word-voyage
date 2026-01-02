@@ -1,5 +1,5 @@
 import { config } from '../config.ts';
-import { LLMGenerationRequest, LLMGenerationResponse, SchemaField, ContextField, Context } from '../types/index.ts';
+import { LLMGenerationRequest, LLMGenerationResponse, SchemaField, Context } from '../types/index.ts';
 
 /**
  * LLM Client Service

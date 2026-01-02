@@ -1,5 +1,5 @@
 import { BaseNode, PluginNodeMetadata } from '../core/pluginNode.ts';
-import { Context, ContextField } from '../types/index.ts';
+import { Context } from '../types/index.ts';
 
 const MAX_CONTEXT_FIELDS = 16;
 

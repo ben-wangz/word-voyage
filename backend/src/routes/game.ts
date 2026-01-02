@@ -7,7 +7,7 @@ import { PreLogSummaryNode } from '../nodes/preLogSummaryNode.ts';
 import { LLMCoreNode } from '../nodes/llmCoreNode.ts';
 import { getSession } from '../services/session.ts';
 import { getStepStorage } from '../services/stepStorage.ts';
-import type { Context, ContextField, Step, ProcessStepRequest, StartGameRequest, I18nContext } from '../types/index.ts';
+import type { Context, Step, ProcessStepRequest, I18nContext } from '../types/index.ts';
 
 const gameRouter = new Hono();
 

@@ -59,6 +59,7 @@ export class AuthService {
       const payload = jwt.verify(token, this.jwtConfig.secret) as { userId: string };
       return { userId: payload.userId };
     } catch (error) {
+      console.error('Access token verification failed:', error);
       throw new Error('Invalid access token');
     }
   }
@@ -81,6 +82,7 @@ export class AuthService {
 
       return { userId: tokenData.userId };
     } catch (error) {
+      console.error('Refresh token verification failed:', error);
       throw new Error('Invalid refresh token');
     }
   }
