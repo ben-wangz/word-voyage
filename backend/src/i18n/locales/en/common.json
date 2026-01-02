@@ -4,6 +4,8 @@
     "sessionIdRequired": "Session ID is required",
     "sessionNotFound": "Session not found",
     "internalError": "Internal server error",
-    "contextLimitExceeded": "Context field limit exceeded: {{current}} > {{max}}. Please remove some fields using mechanism questioning."
+    "contextLimitExceeded": "Context field limit exceeded: {{current}} > {{max}}. Please remove some fields using mechanism questioning.",
+    "invalidStepIndex": "Invalid step index",
+    "forbidden": "Access denied"
   }
 }

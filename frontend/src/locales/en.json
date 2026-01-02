@@ -20,7 +20,9 @@
   "history": {
     "title": "Event History",
     "empty": "No history yet",
-    "you": "You: "
+    "you": "You: ",
+    "rollback": "Time Travel",
+    "rollbackConfirm": "Return to step {{step}}? All subsequent history will be permanently deleted. This action cannot be undone."
   },
   "error": {
     "prefix": "Error:",

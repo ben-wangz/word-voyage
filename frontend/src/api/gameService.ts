@@ -79,6 +79,28 @@ class GameService {
     return response.json();
   }
 
+  async rollback(stepIndex: number, language?: string): Promise<GameResponse> {
+    const url = new URL(`${window.location.origin}${API_BASE}/rollback`);
+    if (language) {
+      url.searchParams.append('lang', language);
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ stepIndex }),
+    });
+
+    if (!response.ok) {
+      this.handleError(response);
+    }
+
+    return response.json();
+  }
+
   async getContext(): Promise<any> {
     const response = await fetch(`${API_BASE}/context`, {
       method: 'GET',

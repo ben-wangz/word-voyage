@@ -301,6 +301,31 @@ body {
   background-color: #1a1a1a;
   border-radius: 4px;
   border-left: 2px solid #667eea;
+  position: relative;
+}
+
+.history-item .rollback-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background-color: transparent;
+  color: #667eea;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background-color 0.2s, border-color 0.2s;
+}
+
+.history-item:hover .rollback-button {
+  opacity: 1;
+}
+
+.history-item .rollback-button:hover {
+  background-color: rgba(102, 126, 234, 0.1);
+  border-color: #667eea;
 }
 
 .input-label {

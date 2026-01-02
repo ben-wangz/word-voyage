@@ -27,6 +27,14 @@ class BackendGameClient:
         except Exception:
             self.service_name = "unknown"
 
+    def fresh_copy(self) -> 'BackendGameClient':
+        """Create a fresh copy of the client with new session
+
+        Returns:
+            New BackendGameClient instance with same configuration
+        """
+        return BackendGameClient(self.service_url, self.timeout)
+
     def __enter__(self):
         return self
 
@@ -130,6 +138,36 @@ class BackendGameClient:
         response = self.client.get(url, params=params)
         response.raise_for_status()
         return response.json()
+
+    def rollback(self, step_index: int, lang: str = None) -> Dict[str, Any]:
+        """Rollback to a specific step
+
+        Args:
+            step_index: Step index to rollback to (0-based)
+            lang: Optional language code (en, zh)
+
+        Returns:
+            Response with step and sessionId
+        """
+        url = f"{self.service_url}/api/game/rollback"
+        params = {"lang": lang} if lang else None
+        response = self.client.post(url, json={"stepIndex": step_index}, params=params)
+        response.raise_for_status()
+        return response.json()
+
+    def rollback_raw(self, payload: Dict[str, Any], lang: str = None) -> httpx.Response:
+        """Rollback with raw payload (for validation testing)
+
+        Args:
+            payload: Request payload
+            lang: Optional language code
+
+        Returns:
+            Raw HTTP response
+        """
+        url = f"{self.service_url}/api/game/rollback"
+        params = {"lang": lang} if lang else None
+        return self.client.post(url, json=payload, params=params)
 
     def get_history(self) -> Dict[str, Any]:
         """Get game step history

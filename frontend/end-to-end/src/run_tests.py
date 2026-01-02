@@ -15,7 +15,9 @@ from .case.test_game_initialization import test_game_initialization
 from .case.test_user_interactions import (
     test_single_user_input,
     test_multiple_sequential_inputs,
-    test_context_update_after_input
+    test_context_update_after_input,
+    test_rollback_button_visibility,
+    test_rollback_with_confirmation
 )
 from .case.test_ui_updates import (
     test_history_list_updates,
@@ -106,6 +108,18 @@ def run_all_tests(frontend_url: str = None, browser_ws_url: str = None) -> bool:
                 test_context_display_structure(client, result)
             except Exception as e:
                 print(f"\nContext display structure test failed: {e}")
+
+            # Test 8: Rollback button visibility
+            try:
+                test_rollback_button_visibility(client, result)
+            except Exception as e:
+                print(f"\nRollback button visibility test failed: {e}")
+
+            # Test 9: Rollback with confirmation
+            try:
+                test_rollback_with_confirmation(client, result)
+            except Exception as e:
+                print(f"\nRollback with confirmation test failed: {e}")
 
     except ConnectionError as e:
         print(f"\n✗ Connection failed: {e}")

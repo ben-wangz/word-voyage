@@ -68,6 +68,27 @@ export class SessionService {
     return [...session.stepHistory];
   }
 
+  async rollbackToStep(sessionId: string, stepIndex: number): Promise<string[]> {
+    const session = await this.getSession(sessionId);
+    if (!session) {
+      throw new Error(`Session not found: ${sessionId}`);
+    }
+
+    if (stepIndex < 0 || stepIndex >= session.stepHistory.length) {
+      const error: any = new Error(`Invalid step index: ${stepIndex}`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const deletedStepIds = session.stepHistory.slice(stepIndex + 1);
+    session.stepHistory = session.stepHistory.slice(0, stepIndex + 1);
+    session.currentStepId = session.stepHistory[stepIndex];
+    session.lastAccessedAt = Date.now();
+
+    await this.storage.set(`session:${sessionId}`, JSON.stringify(session), config.ttl.session);
+    return deletedStepIds;
+  }
+
   async deleteSession(sessionId: string): Promise<void> {
     const session = await this.getSession(sessionId);
     if (session) {

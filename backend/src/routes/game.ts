@@ -251,4 +251,55 @@ gameRouter.get('/history/:sessionId', async (c) => {
   }
 });
 
+/**
+ * POST /api/game/rollback - Rollback to a specific step
+ */
+gameRouter.post('/rollback', async (c) => {
+  try {
+    const t = c.get('t') as I18nContext['t'];
+    const body = await c.req.json<{ stepIndex: number }>();
+    const { stepIndex } = body;
+
+    if (typeof stepIndex !== 'number' || stepIndex < 0) {
+      return c.json({ error: { code: 'INVALID_INPUT', message: t('common:errors.invalidStepIndex', 'Invalid step index') } }, 400);
+    }
+
+    const sessionId = c.get('sessionId') as string;
+    const userId = c.get('userId') as string;
+    const sessionService = getSession();
+    const storage = getStepStorage();
+
+    const session = await sessionService.getSession(sessionId);
+    if (!session) {
+      return c.json({ error: { code: 'SESSION_NOT_FOUND', message: t('common:errors.sessionNotFound', 'Session not found') } }, 404);
+    }
+
+    if (session.userId !== userId) {
+      return c.json({ error: { code: 'FORBIDDEN', message: t('common:errors.forbidden', 'Access denied') } }, 403);
+    }
+
+    const deletedStepIds = await sessionService.rollbackToStep(sessionId, stepIndex);
+    
+    for (const stepId of deletedStepIds) {
+      await storage.deleteStep(stepId);
+    }
+
+    const currentStep = await storage.getStep(session.stepHistory[stepIndex]);
+
+    return c.json({
+      step: currentStep,
+      sessionId,
+    });
+  } catch (error: any) {
+    console.error('Error rolling back:', error);
+    const t = c.get('t') as I18nContext['t'];
+
+    if (error.statusCode === 400) {
+      return c.json({ error: { code: 'INVALID_INPUT', message: t('common:errors.invalidStepIndex', 'Invalid step index') } }, 400);
+    }
+
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: t('common:errors.internalError', error.message) } }, 500);
+  }
+});
+
 export default gameRouter;

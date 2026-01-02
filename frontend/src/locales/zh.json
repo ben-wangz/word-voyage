@@ -20,7 +20,9 @@
   "history": {
     "title": "事件历史",
     "empty": "暂无历史记录",
-    "you": "你: "
+    "you": "你: ",
+    "rollback": "时空穿梭",
+    "rollbackConfirm": "回到第 {{step}} 步？后续历史将被永久删除，此操作不可撤销。"
   },
   "error": {
     "prefix": "错误:",

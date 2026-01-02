@@ -20,7 +20,9 @@ from .case.test_game_step import (
 from .case.test_session_history import (
     test_get_current_context,
     test_get_step_history,
-    test_session_isolation
+    test_session_isolation,
+    test_rollback_to_step,
+    test_rollback_invalid_index
 )
 from .case.test_error_handling import (
     test_invalid_session,
@@ -200,6 +202,18 @@ def run_all_tests(service_url: str = None) -> bool:
                 test_malformed_email(client, result)
             except Exception as e:
                 print(f"\nMalformed email test failed: {e}")
+
+            # Test 23: Rollback to step
+            try:
+                test_rollback_to_step(client, result)
+            except Exception as e:
+                print(f"\nRollback to step test failed: {e}")
+
+            # Test 24: Rollback invalid index
+            try:
+                test_rollback_invalid_index(client, result)
+            except Exception as e:
+                print(f"\nRollback invalid index test failed: {e}")
 
     except ConnectionError as e:
         print(f"\n✗ Connection failed: {e}")

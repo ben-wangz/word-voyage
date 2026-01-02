@@ -61,6 +61,22 @@ export function GamePage() {
     }
   };
 
+  const handleRollback = async (stepIndex) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await gameService.rollback(stepIndex, i18n.language);
+      setCurrentStep(response.step);
+      setContext(response.step.context);
+      setHistory((prev) => prev.slice(0, stepIndex + 1));
+    } catch (err) {
+      handleError(err);
+      console.error('Failed to rollback:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="game-page">
       <header className="game-header">
@@ -85,7 +101,7 @@ export function GamePage() {
 
         <aside className="right-panel">
           <ContextDisplay context={context} />
-          <EventHistory events={history.slice(0, -1)} />
+          <EventHistory events={history.slice(0, -1)} onRollback={handleRollback} />
         </aside>
       </main>
     </div>

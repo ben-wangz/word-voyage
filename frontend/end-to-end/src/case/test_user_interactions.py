@@ -195,3 +195,165 @@ def test_context_update_after_input(client: PlaywrightClient, result: TestResult
             screenshot = None
         result.add(test_name, "failed", duration, str(e), screenshot)
         raise
+
+
+def test_rollback_button_visibility(client: PlaywrightClient, result: TestResult) -> None:
+    """Test rollback button visibility on hover
+
+    Args:
+        client: Playwright client instance
+        result: Test result collector
+    """
+    test_name = "test_rollback_button_visibility"
+    client.screenshot_manager.set_test_context(test_name)
+
+    start_time = time.time()
+    try:
+        # Process 2 steps to generate history
+        initial_event = client.get_current_event_text()
+        client.submit_user_input("Action 1")
+        client.wait_for_new_event(initial_event, timeout=int(client.timeout * 1.5))
+
+        event_after_first = client.get_current_event_text()
+        client.submit_user_input("Action 2")
+        client.wait_for_new_event(event_after_first, timeout=int(client.timeout * 1.5))
+
+        client.capture_screenshot("01_history_generated")
+
+        # Find history items
+        history_items = client.page.query_selector_all(".history-item")
+        assert len(history_items) >= 1, "Should have at least 1 history item"
+
+        first_item = history_items[0]
+
+        # Check button is not visible initially
+        rollback_button = first_item.query_selector(".rollback-button")
+        assert rollback_button is not None, "Rollback button should exist"
+
+        opacity_before = rollback_button.evaluate("el => window.getComputedStyle(el).opacity")
+        assert float(opacity_before) == 0, f"Button should be invisible (opacity 0), got {opacity_before}"
+
+        client.capture_screenshot("02_button_invisible")
+
+        # Hover over history item
+        first_item.hover()
+        client.page.wait_for_timeout(500)  # Wait for transition
+
+        # Check button is visible after hover
+        opacity_after = rollback_button.evaluate("el => window.getComputedStyle(el).opacity")
+        assert float(opacity_after) == 1, f"Button should be visible (opacity 1) on hover, got {opacity_after}"
+
+        client.capture_screenshot("03_button_visible_on_hover")
+
+        duration = time.time() - start_time
+        result.add(test_name, "success", duration)
+
+    except AssertionError as e:
+        duration = time.time() - start_time
+        try:
+            screenshot = client.capture_screenshot("error_state")
+        except:
+            screenshot = None
+        result.add(test_name, "failed", duration, str(e), screenshot)
+        raise
+
+    except Exception as e:
+        duration = time.time() - start_time
+        try:
+            screenshot = client.capture_screenshot("error_state")
+        except:
+            screenshot = None
+        result.add(test_name, "failed", duration, str(e), screenshot)
+        raise
+
+
+def test_rollback_with_confirmation(client: PlaywrightClient, result: TestResult) -> None:
+    """Test rollback functionality with confirmation dialog
+
+    Args:
+        client: Playwright client instance
+        result: Test result collector
+    """
+    test_name = "test_rollback_with_confirmation"
+    client.screenshot_manager.set_test_context(test_name)
+
+    start_time = time.time()
+    try:
+        # Process 3 steps
+        initial_event = client.get_current_event_text()
+        client.submit_user_input("Action 1")
+        client.wait_for_new_event(initial_event, timeout=int(client.timeout * 1.5))
+
+        event_1 = client.get_current_event_text()
+        client.submit_user_input("Action 2")
+        client.wait_for_new_event(event_1, timeout=int(client.timeout * 1.5))
+
+        event_2 = client.get_current_event_text()
+        client.submit_user_input("Action 3")
+        client.wait_for_new_event(event_2, timeout=int(client.timeout * 1.5))
+
+        client.capture_screenshot("01_three_steps_completed")
+
+        # Verify we have 3 history items
+        history_count_before = client.get_history_count()
+        assert history_count_before == 3, f"Expected 3 history items, got {history_count_before}"
+
+        # Find first history item and rollback button
+        history_items = client.page.query_selector_all(".history-item")
+        first_item = history_items[0]
+        first_item.hover()
+        client.page.wait_for_timeout(300)
+
+        rollback_button = first_item.query_selector(".rollback-button")
+        assert rollback_button is not None, "Rollback button should exist"
+
+        client.capture_screenshot("02_hover_first_item")
+
+        # Click rollback button - should show confirmation dialog
+        client.page.on("dialog", lambda dialog: dialog.dismiss())  # Dismiss first time
+        rollback_button.click()
+        client.page.wait_for_timeout(500)
+
+        client.capture_screenshot("03_after_cancel")
+
+        # Verify nothing changed after cancel
+        history_count_after_cancel = client.get_history_count()
+        assert history_count_after_cancel == 3, f"History should not change after cancel, got {history_count_after_cancel}"
+
+        # Click again and accept
+        client.page.remove_listener("dialog", lambda dialog: dialog.dismiss())
+        client.page.on("dialog", lambda dialog: dialog.accept())
+
+        first_item.hover()
+        client.page.wait_for_timeout(300)
+        rollback_button.click()
+        client.page.wait_for_timeout(1000)  # Wait for rollback to complete
+
+        client.capture_screenshot("04_after_accept")
+
+        # Verify history reduced to 1 (rolled back to index 0)
+        history_count_after_rollback = client.get_history_count()
+        assert history_count_after_rollback == 1, f"Expected 1 history item after rollback to index 0, got {history_count_after_rollback}"
+
+        client.capture_screenshot("05_rollback_completed")
+
+        duration = time.time() - start_time
+        result.add(test_name, "success", duration)
+
+    except AssertionError as e:
+        duration = time.time() - start_time
+        try:
+            screenshot = client.capture_screenshot("error_state")
+        except:
+            screenshot = None
+        result.add(test_name, "failed", duration, str(e), screenshot)
+        raise
+
+    except Exception as e:
+        duration = time.time() - start_time
+        try:
+            screenshot = client.capture_screenshot("error_state")
+        except:
+            screenshot = None
+        result.add(test_name, "failed", duration, str(e), screenshot)
+        raise

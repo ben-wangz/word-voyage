@@ -167,3 +167,100 @@ def test_session_isolation(client: BackendGameClient, result: TestResult):
     except Exception as e:
         result.add(test_name, "failed", time.time() - start_time, str(e))
         raise
+
+
+def test_rollback_to_step(client: BackendGameClient, result: TestResult):
+    """Test POST /api/game/rollback endpoint"""
+    test_name = "Rollback to Step"
+    start_time = time.time()
+
+    try:
+        print(f"\n{'='*60}")
+        print(f"Running: {test_name}")
+        print('='*60)
+
+        # Create fresh client for isolated test
+        test_client = client.fresh_copy()
+        test_client.start_game()
+        print("\nGame started")
+
+        # Process 3 steps
+        for i in range(3):
+            test_client.process_step(f"Action {i+1}")
+        print("Processed 3 steps")
+
+        # Get history before rollback
+        history_before = test_client.get_history()
+        steps_before = history_before.get('steps', [])
+        print(f"History before rollback: {len(steps_before)} steps")
+        assert len(steps_before) == 4, f"Expected 4 steps (1 initial + 3 actions), got {len(steps_before)}"
+
+        # Rollback to step 1 (0-based index)
+        print("\nRolling back to step 1...")
+        rollback_response = test_client.rollback(1)
+
+        assert 'step' in rollback_response, "Expected step in rollback response"
+        assert 'sessionId' in rollback_response, "Expected sessionId in rollback response"
+
+        # Get history after rollback
+        history_after = test_client.get_history()
+        steps_after = history_after.get('steps', [])
+        print(f"History after rollback: {len(steps_after)} steps")
+
+        # Verify history length
+        assert len(steps_after) == 2, f"Expected 2 steps after rollback to index 1, got {len(steps_after)}"
+
+        # Verify current step is the one we rolled back to
+        current_step = rollback_response.get('step')
+        assert current_step.get('id') == steps_after[1].get('id'), "Current step should match step at index 1"
+
+        print("  ✓ Rollback successful")
+
+        test_client.close()
+        result.add(test_name, "success", time.time() - start_time)
+
+    except Exception as e:
+        result.add(test_name, "failed", time.time() - start_time, str(e))
+        raise
+
+
+def test_rollback_invalid_index(client: BackendGameClient, result: TestResult):
+    """Test rollback with invalid step index"""
+    test_name = "Rollback Invalid Index"
+    start_time = time.time()
+
+    try:
+        print(f"\n{'='*60}")
+        print(f"Running: {test_name}")
+        print('='*60)
+
+        # Create fresh client for isolated test
+        test_client = client.fresh_copy()
+        test_client.start_game()
+        test_client.process_step("Action 1")
+        print("\nGame started with 2 steps")
+
+        # Test negative index
+        print("\nTesting negative index...")
+        response = test_client.rollback_raw({"stepIndex": -1})
+        assert response.status_code == 400, f"Expected 400 for negative index, got {response.status_code}"
+        print("  ✓ Negative index rejected")
+
+        # Test out of range index
+        print("\nTesting out of range index...")
+        response = test_client.rollback_raw({"stepIndex": 999})
+        assert response.status_code == 400, f"Expected 400 for out of range index, got {response.status_code}"
+        print("  ✓ Out of range index rejected")
+
+        # Test invalid type
+        print("\nTesting invalid type...")
+        response = test_client.rollback_raw({"stepIndex": "invalid"})
+        assert response.status_code == 400, f"Expected 400 for invalid type, got {response.status_code}"
+        print("  ✓ Invalid type rejected")
+
+        test_client.close()
+        result.add(test_name, "success", time.time() - start_time)
+
+    except Exception as e:
+        result.add(test_name, "failed", time.time() - start_time, str(e))
+        raise
