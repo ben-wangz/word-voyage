@@ -242,19 +242,19 @@ def test_rollback_invalid_index(client: BackendGameClient, result: TestResult):
 
         # Test negative index
         print("\nTesting negative index...")
-        response = test_client.rollback_raw({"stepIndex": -1})
+        response = test_client.rollback_no_raise(-1)
         assert response.status_code == 400, f"Expected 400 for negative index, got {response.status_code}"
         print("  ✓ Negative index rejected")
 
         # Test out of range index
         print("\nTesting out of range index...")
-        response = test_client.rollback_raw({"stepIndex": 999})
+        response = test_client.rollback_no_raise(999)
         assert response.status_code == 400, f"Expected 400 for out of range index, got {response.status_code}"
         print("  ✓ Out of range index rejected")
 
         # Test invalid type
         print("\nTesting invalid type...")
-        response = test_client.rollback_raw({"stepIndex": "invalid"})
+        response = test_client.rollback_no_raise("invalid")
         assert response.status_code == 400, f"Expected 400 for invalid type, got {response.status_code}"
         print("  ✓ Invalid type rejected")
 

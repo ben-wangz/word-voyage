@@ -155,11 +155,11 @@ class BackendGameClient:
         response.raise_for_status()
         return response.json()
 
-    def rollback_raw(self, payload: Dict[str, Any], lang: str = None) -> httpx.Response:
-        """Rollback with raw payload (for validation testing)
+    def rollback_no_raise(self, step_index, lang: str = None) -> httpx.Response:
+        """Rollback without raising on error (for validation testing)
 
         Args:
-            payload: Request payload
+            step_index: Step index (can be invalid for testing)
             lang: Optional language code
 
         Returns:
@@ -167,7 +167,7 @@ class BackendGameClient:
         """
         url = f"{self.service_url}/api/game/rollback"
         params = {"lang": lang} if lang else None
-        return self.client.post(url, json=payload, params=params)
+        return self.client.post(url, json={"stepIndex": step_index}, params=params)
 
     def get_history(self) -> Dict[str, Any]:
         """Get game step history
