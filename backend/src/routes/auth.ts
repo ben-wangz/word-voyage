@@ -27,7 +27,14 @@ authRouter.post('/register', async (c) => {
     const { email, password } = body;
 
     if (!email || !password) {
+      console.warn('Register failed: missing email or password');
       return c.json({ error: { code: 'INVALID_INPUT', message: t('common:errors.emailPasswordRequired', 'Email and password required') } }, 400);
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.warn('Register failed: invalid email format', email);
+      return c.json({ error: { code: 'INVALID_EMAIL', message: t('auth:errors.invalidEmail', 'Invalid email format') } }, 400);
     }
 
     const authService = getAuth();
@@ -35,6 +42,7 @@ authRouter.post('/register', async (c) => {
 
     const existingUser = await userService.getUserByEmail(email);
     if (existingUser) {
+      console.warn('Register failed: email already exists', email);
       return c.json({ error: { code: 'EMAIL_EXISTS', message: t('auth:errors.emailExists', 'Email already registered') } }, 400);
     }
 
@@ -50,7 +58,7 @@ authRouter.post('/register', async (c) => {
       ...tokens,
     });
   } catch (error: any) {
-    console.error('Error registering user:', error);
+    console.error('Register error:', error);
     const t = c.get('t') as I18nContext['t'];
     return c.json({ error: { code: 'INTERNAL_ERROR', message: t('common:errors.internalError', error.message) } }, 500);
   }
@@ -63,6 +71,7 @@ authRouter.post('/login', async (c) => {
     const { email, password } = body;
 
     if (!email || !password) {
+      console.warn('Login failed: missing email or password');
       return c.json({ error: { code: 'INVALID_INPUT', message: t('common:errors.emailPasswordRequired', 'Email and password required') } }, 400);
     }
 
@@ -71,11 +80,13 @@ authRouter.post('/login', async (c) => {
 
     const user = await userService.getUserByEmail(email);
     if (!user || !user.passwordHash) {
+      console.warn('Login failed: invalid credentials for', email);
       return c.json({ error: { code: 'INVALID_CREDENTIALS', message: t('auth:errors.invalidCredentials', 'Invalid email or password') } }, 401);
     }
 
     const valid = await authService.verifyPassword(password, user.passwordHash);
     if (!valid) {
+      console.warn('Login failed: invalid password for', email);
       return c.json({ error: { code: 'INVALID_CREDENTIALS', message: t('auth:errors.invalidCredentials', 'Invalid email or password') } }, 401);
     }
 
@@ -88,7 +99,7 @@ authRouter.post('/login', async (c) => {
       ...tokens,
     });
   } catch (error: any) {
-    console.error('Error logging in:', error);
+    console.error('Login error:', error);
     const t = c.get('t') as I18nContext['t'];
     return c.json({ error: { code: 'INTERNAL_ERROR', message: t('common:errors.internalError', error.message) } }, 500);
   }
@@ -101,6 +112,7 @@ authRouter.post('/refresh', async (c) => {
     const { refreshToken } = body;
 
     if (!refreshToken) {
+      console.warn('Refresh failed: missing refresh token');
       return c.json({ error: { code: 'INVALID_INPUT', message: t('auth:errors.refreshTokenRequired', 'Refresh token required') } }, 400);
     }
 
@@ -109,7 +121,7 @@ authRouter.post('/refresh', async (c) => {
 
     return c.json(tokens);
   } catch (error: any) {
-    console.error('Error refreshing token:', error);
+    console.error('Refresh token error:', error.message);
     const t = c.get('t') as I18nContext['t'];
     return c.json({ error: { code: 'INVALID_TOKEN', message: t('auth:errors.invalidRefreshToken', 'Invalid or expired refresh token') } }, 401);
   }
@@ -134,7 +146,7 @@ authRouter.post('/logout', async (c) => {
 
     return c.json({ message: t('auth:success.loggedOut', 'Logged out successfully') });
   } catch (error: any) {
-    console.error('Error logging out:', error);
+    console.error('Logout error:', error);
     const t = c.get('t') as I18nContext['t'];
     return c.json({ error: { code: 'INTERNAL_ERROR', message: t('common:errors.internalError', error.message) } }, 500);
   }

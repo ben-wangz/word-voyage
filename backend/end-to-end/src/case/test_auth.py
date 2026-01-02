@@ -1,8 +1,14 @@
 """Authentication tests"""
 
 import time
+import random
 from ..utils.backend_client import BackendGameClient
 from ..utils.test_result import TestResult
+
+
+def _generate_test_email(prefix: str = "test") -> str:
+    """Generate unique test email with timestamp and random suffix"""
+    return f"{prefix}_{int(time.time())}_{random.randint(1000, 9999)}@example.com"
 
 
 def test_anonymous_to_registered(client: BackendGameClient, result: TestResult):
@@ -15,20 +21,21 @@ def test_anonymous_to_registered(client: BackendGameClient, result: TestResult):
         print(f"Running: {test_name}")
         print('='*60)
 
-        response = client.start_game()
+        test_client = BackendGameClient(client.service_url)
+        response = test_client.start_game()
         session_id_before = response.get('sessionId')
         print(f"  Session ID before registration: {session_id_before}")
 
-        client.process_step("look around")
-        client.process_step("check inventory")
+        test_client.process_step("look around")
+        test_client.process_step("check inventory")
 
-        history_before = client.get_history()
+        history_before = test_client.get_history()
         steps_count_before = len(history_before.get('steps', []))
         print(f"  Steps before registration: {steps_count_before}")
 
-        email = f"test_{int(time.time())}@example.com"
+        email = _generate_test_email()
         password = "TestPassword123!"
-        register_response = client.register_user(email, password)
+        register_response = test_client.register_user(email, password)
 
         assert 'user' in register_response
         assert 'accessToken' in register_response
@@ -36,18 +43,19 @@ def test_anonymous_to_registered(client: BackendGameClient, result: TestResult):
         assert register_response['user']['email'] == email
         print(f"  Registered user: {email}")
 
-        session_id_after = client.get_session_id()
+        session_id_after = test_client.get_session_id()
         assert session_id_before == session_id_after, "Session ID changed after registration"
         print(f"  ✓ Session ID preserved")
 
-        history_after = client.get_history()
+        history_after = test_client.get_history()
         steps_count_after = len(history_after.get('steps', []))
         assert steps_count_after == steps_count_before, "History lost after registration"
         print(f"  ✓ History preserved ({steps_count_after} steps)")
 
-        client.process_step("continue")
+        test_client.process_step("continue")
         print(f"  ✓ Game continues seamlessly")
 
+        test_client.close()
         result.add(test_name, "success", time.time() - start_time)
 
     except Exception as e:
@@ -65,13 +73,14 @@ def test_user_login(client: BackendGameClient, result: TestResult):
         print(f"Running: {test_name}")
         print('='*60)
 
-        client.start_game()
-        email = f"test_{int(time.time())}@example.com"
+        test_client = BackendGameClient(client.service_url)
+        test_client.start_game()
+        email = _generate_test_email()
         password = "TestPassword123!"
-        client.register_user(email, password)
+        test_client.register_user(email, password)
 
-        client.process_step("explore")
-        session_id = client.get_session_id()
+        test_client.process_step("explore")
+        session_id = test_client.get_session_id()
         print(f"  Created session: {session_id}")
 
         new_client = BackendGameClient(client.service_url)
@@ -88,6 +97,7 @@ def test_user_login(client: BackendGameClient, result: TestResult):
         assert context_response.status_code == 200
         print(f"  ✓ Can access session with JWT")
 
+        test_client.close()
         new_client.close()
         result.add(test_name, "success", time.time() - start_time)
 
@@ -106,18 +116,19 @@ def test_logout(client: BackendGameClient, result: TestResult):
         print(f"Running: {test_name}")
         print('='*60)
 
-        client.start_game()
-        email = f"test_{int(time.time())}@example.com"
+        test_client = BackendGameClient(client.service_url)
+        test_client.start_game()
+        email = _generate_test_email()
         password = "TestPassword123!"
-        register_response = client.register_user(email, password)
+        register_response = test_client.register_user(email, password)
         refresh_token = register_response['refreshToken']
 
-        logout_response = client.logout(refresh_token)
+        logout_response = test_client.logout(refresh_token)
         assert 'message' in logout_response or 'error' not in logout_response
         print(f"  ✓ Logout successful")
 
         try:
-            client.refresh_token(refresh_token)
+            test_client.refresh_token(refresh_token)
             raise AssertionError("Refresh token should be revoked")
         except Exception as e:
             if "401" in str(e) or "Invalid" in str(e):
@@ -125,6 +136,7 @@ def test_logout(client: BackendGameClient, result: TestResult):
             else:
                 raise
 
+        test_client.close()
         result.add(test_name, "success", time.time() - start_time)
 
     except Exception as e:
@@ -142,23 +154,25 @@ def test_token_refresh(client: BackendGameClient, result: TestResult):
         print(f"Running: {test_name}")
         print('='*60)
 
-        client.start_game()
-        email = f"test_{int(time.time())}@example.com"
+        test_client = BackendGameClient(client.service_url)
+        test_client.start_game()
+        email = _generate_test_email()
         password = "TestPassword123!"
-        register_response = client.register_user(email, password)
+        register_response = test_client.register_user(email, password)
         refresh_token = register_response['refreshToken']
 
-        refresh_response = client.refresh_token(refresh_token)
+        refresh_response = test_client.refresh_token(refresh_token)
         assert 'accessToken' in refresh_response
         assert 'refreshToken' in refresh_response
         print(f"  ✓ New tokens obtained")
 
-        client.set_jwt_header(refresh_response['accessToken'])
-        session_id = client.get_session_id()
-        context_response = client.get_context_by_id(session_id)
+        test_client.set_jwt_header(refresh_response['accessToken'])
+        session_id = test_client.get_session_id()
+        context_response = test_client.get_context_by_id(session_id)
         assert context_response.status_code == 200
         print(f"  ✓ New access token works")
 
+        test_client.close()
         result.add(test_name, "success", time.time() - start_time)
 
     except Exception as e:
@@ -178,14 +192,14 @@ def test_cross_user_session_access(client: BackendGameClient, result: TestResult
 
         client_a = BackendGameClient(client.service_url)
         client_a.start_game()
-        email_a = f"test_a_{int(time.time())}@example.com"
+        email_a = _generate_test_email("test_a")
         client_a.register_user(email_a, "Password123!")
         session_a = client_a.get_session_id()
         print(f"  User A session: {session_a}")
 
         client_b = BackendGameClient(client.service_url)
         client_b.start_game()
-        email_b = f"test_b_{int(time.time())}@example.com"
+        email_b = _generate_test_email("test_b")
         tokens_b = client_b.register_user(email_b, "Password123!")
         client_b.set_jwt_header(tokens_b['accessToken'])
         print(f"  User B registered")
@@ -264,7 +278,7 @@ def test_register_preserves_ownership(client: BackendGameClient, result: TestRes
 
         client_a = BackendGameClient(client.service_url)
         client_a.start_game()
-        email_a = f"test_a_{int(time.time())}@example.com"
+        email_a = _generate_test_email("test_a")
         tokens_a = client_a.register_user(email_a, "Password123!")
         session_a = client_a.get_session_id()
         print(f"  User A registered, session: {session_a}")
@@ -278,7 +292,7 @@ def test_register_preserves_ownership(client: BackendGameClient, result: TestRes
 
         client_b = BackendGameClient(client.service_url)
         client_b.start_game()
-        email_b = f"test_b_{int(time.time())}@example.com"
+        email_b = _generate_test_email("test_b")
         tokens_b = client_b.register_user(email_b, "Password123!")
         client_b.set_jwt_header(tokens_b['accessToken'])
 
@@ -306,13 +320,14 @@ def test_invalid_credentials(client: BackendGameClient, result: TestResult):
         print(f"Running: {test_name}")
         print('='*60)
 
-        client.start_game()
-        email = f"test_{int(time.time())}@example.com"
+        test_client = BackendGameClient(client.service_url)
+        test_client.start_game()
+        email = _generate_test_email()
         password = "TestPassword123!"
-        client.register_user(email, password)
+        test_client.register_user(email, password)
 
         try:
-            client.login_user(email, "WrongPassword")
+            test_client.login_user(email, "WrongPassword")
             raise AssertionError("Login should fail with wrong password")
         except Exception as e:
             if "401" in str(e):
@@ -321,7 +336,7 @@ def test_invalid_credentials(client: BackendGameClient, result: TestResult):
                 raise
 
         try:
-            client.login_user("nonexistent@example.com", password)
+            test_client.login_user("nonexistent@example.com", password)
             raise AssertionError("Login should fail with non-existent email")
         except Exception as e:
             if "401" in str(e):
@@ -329,6 +344,7 @@ def test_invalid_credentials(client: BackendGameClient, result: TestResult):
             else:
                 raise
 
+        test_client.close()
         result.add(test_name, "success", time.time() - start_time)
 
     except Exception as e:
@@ -346,10 +362,11 @@ def test_duplicate_email(client: BackendGameClient, result: TestResult):
         print(f"Running: {test_name}")
         print('='*60)
 
-        client.start_game()
-        email = f"test_{int(time.time())}@example.com"
+        test_client = BackendGameClient(client.service_url)
+        test_client.start_game()
+        email = _generate_test_email()
         password = "TestPassword123!"
-        client.register_user(email, password)
+        test_client.register_user(email, password)
         print(f"  First registration: {email}")
 
         client_b = BackendGameClient(client.service_url)
@@ -364,6 +381,7 @@ def test_duplicate_email(client: BackendGameClient, result: TestResult):
             else:
                 raise
 
+        test_client.close()
         client_b.close()
         result.add(test_name, "success", time.time() - start_time)
 
@@ -382,11 +400,12 @@ def test_empty_password(client: BackendGameClient, result: TestResult):
         print(f"Running: {test_name}")
         print('='*60)
 
-        client.start_game()
-        email = f"test_{int(time.time())}@example.com"
+        test_client = BackendGameClient(client.service_url)
+        test_client.start_game()
+        email = _generate_test_email()
 
         try:
-            client.register_user(email, "")
+            test_client.register_user(email, "")
             raise AssertionError("Registration should fail with empty password")
         except Exception as e:
             if "400" in str(e):
@@ -394,6 +413,7 @@ def test_empty_password(client: BackendGameClient, result: TestResult):
             else:
                 raise
 
+        test_client.close()
         result.add(test_name, "success", time.time() - start_time)
 
     except Exception as e:
@@ -411,7 +431,8 @@ def test_malformed_email(client: BackendGameClient, result: TestResult):
         print(f"Running: {test_name}")
         print('='*60)
 
-        client.start_game()
+        test_client = BackendGameClient(client.service_url)
+        test_client.start_game()
         password = "TestPassword123!"
 
         invalid_emails = [
@@ -423,7 +444,7 @@ def test_malformed_email(client: BackendGameClient, result: TestResult):
 
         for invalid_email in invalid_emails:
             try:
-                client.register_user(invalid_email, password)
+                test_client.register_user(invalid_email, password)
                 raise AssertionError(f"Registration should fail for: {invalid_email}")
             except Exception as e:
                 if "400" in str(e):
@@ -431,6 +452,7 @@ def test_malformed_email(client: BackendGameClient, result: TestResult):
                 else:
                     raise
 
+        test_client.close()
         result.add(test_name, "success", time.time() - start_time)
 
     except Exception as e:
