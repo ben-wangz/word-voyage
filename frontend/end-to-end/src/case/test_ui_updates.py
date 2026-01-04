@@ -17,6 +17,10 @@ def test_history_list_updates(client: PlaywrightClient, result: TestResult) -> N
 
     start_time = time.time()
     try:
+        # Reset session to start fresh
+        client.reset_game_session()
+        client.page.wait_for_timeout(500)
+
         # Initial state should have 0 history
         initial_count = client.get_history_count()
         client.capture_screenshot("01_initial_history")
@@ -69,6 +73,10 @@ def test_event_display_updates(client: PlaywrightClient, result: TestResult) -> 
 
     start_time = time.time()
     try:
+        # Reset session to start fresh
+        client.reset_game_session()
+        client.page.wait_for_timeout(500)
+
         events_seen = []
 
         # Collect several events
@@ -125,6 +133,10 @@ def test_context_display_structure(client: PlaywrightClient, result: TestResult)
 
     start_time = time.time()
     try:
+        # Reset session to start fresh
+        client.reset_game_session()
+        client.page.wait_for_timeout(500)
+
         client.capture_screenshot("01_context_display")
 
         context = client.get_context_state()

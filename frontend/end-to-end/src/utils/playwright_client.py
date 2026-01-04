@@ -305,3 +305,18 @@ class PlaywrightClient:
                 self.page.wait_for_selector(selector, state="hidden", timeout=1000)
             except:
                 pass  # Ignore if selector not found
+
+    def reset_game_session(self) -> None:
+        """Reset game session by clearing cookies and reloading page
+
+        This creates a fresh game session by:
+        1. Clearing all cookies (removes sessionId)
+        2. Navigating to the game page
+        3. Waiting for the page to fully load
+        """
+        # Clear all cookies to remove sessionId
+        self.page.context.clear_cookies()
+
+        # Navigate to game to create a new session
+        self.navigate_to_game()
+        self.wait_for_game_ready()

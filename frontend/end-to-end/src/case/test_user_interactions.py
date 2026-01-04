@@ -17,6 +17,10 @@ def test_single_user_input(client: PlaywrightClient, result: TestResult) -> None
 
     start_time = time.time()
     try:
+        # Reset session to start fresh
+        client.reset_game_session()
+        client.page.wait_for_timeout(500)
+
         # Get initial state
         initial_event = client.get_current_event_text()
         initial_history_count = client.get_history_count()
@@ -80,6 +84,10 @@ def test_multiple_sequential_inputs(client: PlaywrightClient, result: TestResult
 
     start_time = time.time()
     try:
+        # Reset session to start fresh
+        client.reset_game_session()
+        client.page.wait_for_timeout(500)
+
         test_inputs = [
             "Check my health status",
             "Find water source",
@@ -147,6 +155,10 @@ def test_context_update_after_input(client: PlaywrightClient, result: TestResult
 
     start_time = time.time()
     try:
+        # Reset session to start fresh
+        client.reset_game_session()
+        client.page.wait_for_timeout(500)
+
         # Get initial context
         initial_context = client.get_context_state()
         initial_event = client.get_current_event_text()
@@ -209,6 +221,10 @@ def test_rollback_button_visibility(client: PlaywrightClient, result: TestResult
 
     start_time = time.time()
     try:
+        # Reset session to start fresh
+        client.reset_game_session()
+        client.page.wait_for_timeout(500)
+
         # Process 2 steps to generate history
         initial_event = client.get_current_event_text()
         client.submit_user_input("Action 1")
@@ -283,6 +299,10 @@ def test_rollback_with_confirmation(client: PlaywrightClient, result: TestResult
 
     start_time = time.time()
     try:
+        # Reset session to start fresh
+        client.reset_game_session()
+        client.page.wait_for_timeout(500)
+
         # Get initial history count (should be 0 - no history yet)
         initial_history_count = client.get_history_count()
 
