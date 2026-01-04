@@ -75,12 +75,24 @@ class PlaywrightClient:
         # Wait for network to be idle
         self.page.wait_for_load_state('networkidle', timeout=self.timeout)
 
+    def ensure_page_loaded(self) -> None:
+        """Ensure page is loaded and ready
+
+        If page is not yet navigated (about:blank), navigate and wait for ready.
+        """
+        current_url = self.page.url
+        if current_url == "about:blank" or not current_url.startswith(self.frontend_url):
+            self.navigate_to_game()
+            self.wait_for_game_ready()
+
     def get_current_event_text(self) -> str:
         """Get current event description
 
         Returns:
             Event description text
         """
+        self.ensure_page_loaded()
+
         # Try multiple selectors for event text
         selectors = [
             "[data-testid='event-description']",
@@ -114,6 +126,7 @@ class PlaywrightClient:
         Returns:
             Dictionary with state values (health, hunger, etc.)
         """
+        self.ensure_page_loaded()
         context = {}
 
         # Try to find state display elements
@@ -144,6 +157,8 @@ class PlaywrightClient:
         Returns:
             Number of history entries
         """
+        self.ensure_page_loaded()
+
         # Try to find history list items
         selectors = [
             "[data-testid='history-item']",
@@ -168,6 +183,8 @@ class PlaywrightClient:
         Args:
             text: Input text to submit
         """
+        self.ensure_page_loaded()
+
         # Find input field
         input_selector = "input[type='text'], textarea"
         input_field = self.page.wait_for_selector(input_selector, timeout=self.timeout)

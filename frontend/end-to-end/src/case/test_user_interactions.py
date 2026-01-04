@@ -270,6 +270,10 @@ def test_rollback_button_visibility(client: PlaywrightClient, result: TestResult
 def test_rollback_with_confirmation(client: PlaywrightClient, result: TestResult) -> None:
     """Test rollback functionality with confirmation dialog
 
+    Note: History display excludes the current step. Rolling back to Action 1
+    means history will show only the initial step (1 item), as Action 1 becomes
+    the current step.
+
     Args:
         client: Playwright client instance
         result: Test result collector
@@ -279,10 +283,12 @@ def test_rollback_with_confirmation(client: PlaywrightClient, result: TestResult
 
     start_time = time.time()
     try:
-        # Get initial history count
+        # Get initial history count (should be 0 - no history yet)
         initial_history_count = client.get_history_count()
 
-        # Process 3 steps
+        # Process 3 steps (Action 1, 2, 3)
+        # After this, history will be: [initial, action1, action2] (3 items)
+        # (action3 is the current step, not shown in history)
         initial_event = client.get_current_event_text()
         client.submit_user_input("Action 1")
         client.wait_for_new_event(initial_event, timeout=int(client.timeout * 1.5))
@@ -301,16 +307,16 @@ def test_rollback_with_confirmation(client: PlaywrightClient, result: TestResult
         history_count_before = client.get_history_count()
         assert history_count_before == initial_history_count + 3, f"Expected {initial_history_count + 3} history items, got {history_count_before}"
 
-        # Find first history item and rollback button
+        # Find second history item (Action 1) and its rollback button
         history_items = client.page.query_selector_all(".history-item")
-        first_item = history_items[0]
-        first_item.hover()
+        second_item = history_items[1]
+        second_item.hover()
         client.page.wait_for_timeout(300)
 
-        rollback_button = first_item.query_selector(".rollback-button")
+        rollback_button = second_item.query_selector(".rollback-button")
         assert rollback_button is not None, "Rollback button should exist"
 
-        client.capture_screenshot("02_hover_first_item")
+        client.capture_screenshot("02_hover_second_item")
 
         # Click rollback button - should show confirmation dialog
         dismiss_handler = lambda dialog: dialog.dismiss()
@@ -328,16 +334,17 @@ def test_rollback_with_confirmation(client: PlaywrightClient, result: TestResult
         client.page.remove_listener("dialog", dismiss_handler)
         client.page.on("dialog", lambda dialog: dialog.accept())
 
-        first_item.hover()
+        second_item.hover()
         client.page.wait_for_timeout(300)
         rollback_button.click()
         client.page.wait_for_timeout(1000)  # Wait for rollback to complete
 
         client.capture_screenshot("04_after_accept")
 
-        # Verify history reduced to initial + 1 (rolled back to first item)
+        # Verify history reduced to 1 item after rollback to Action 1
+        # After rollback: history = [initial, action1], display = [initial] (1 item)
         history_count_after_rollback = client.get_history_count()
-        assert history_count_after_rollback == initial_history_count + 1, f"Expected {initial_history_count + 1} history items after rollback, got {history_count_after_rollback}"
+        assert history_count_after_rollback == initial_history_count + 1, f"Expected {initial_history_count + 1} history items after rollback to Action 1, got {history_count_after_rollback}"
 
         client.capture_screenshot("05_rollback_completed")
 
