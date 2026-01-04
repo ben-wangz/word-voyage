@@ -19,6 +19,9 @@ class Config:
     # Browser settings
     HEADLESS = os.getenv("HEADLESS", "true").lower() == "true"
 
+    # Test case selection
+    SELECTED_CASES = os.getenv("SELECTED_CASES", "").split(",") if os.getenv("SELECTED_CASES") else None
+
     @classmethod
     def validate(cls) -> None:
         """Validate configuration
@@ -43,4 +46,8 @@ class Config:
         print(f"Screenshot Dir:       {cls.SCREENSHOT_DIR}")
         print(f"Page Load Timeout:    {cls.PAGE_LOAD_TIMEOUT}s")
         print(f"Headless Mode:        {cls.HEADLESS}")
+        if cls.SELECTED_CASES:
+            print(f"Selected Cases:       {', '.join(cls.SELECTED_CASES)}")
+        else:
+            print(f"Selected Cases:       All")
         print("="*60 + "\n")

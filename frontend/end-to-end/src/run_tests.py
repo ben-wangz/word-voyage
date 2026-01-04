@@ -26,6 +26,56 @@ from .case.test_ui_updates import (
 )
 
 
+# Test case registry
+TEST_CASES = [
+    {
+        "name": "test_game_initialization",
+        "function": test_game_initialization,
+        "description": "Game initialization"
+    },
+    {
+        "name": "test_single_user_input",
+        "function": test_single_user_input,
+        "description": "Single user input"
+    },
+    {
+        "name": "test_multiple_sequential_inputs",
+        "function": test_multiple_sequential_inputs,
+        "description": "Multiple sequential inputs"
+    },
+    {
+        "name": "test_context_update_after_input",
+        "function": test_context_update_after_input,
+        "description": "Context update after input"
+    },
+    {
+        "name": "test_history_list_updates",
+        "function": test_history_list_updates,
+        "description": "History list updates"
+    },
+    {
+        "name": "test_event_display_updates",
+        "function": test_event_display_updates,
+        "description": "Event display updates"
+    },
+    {
+        "name": "test_context_display_structure",
+        "function": test_context_display_structure,
+        "description": "Context display structure"
+    },
+    {
+        "name": "test_rollback_button_visibility",
+        "function": test_rollback_button_visibility,
+        "description": "Rollback button visibility"
+    },
+    {
+        "name": "test_rollback_with_confirmation",
+        "function": test_rollback_with_confirmation,
+        "description": "Rollback with confirmation"
+    }
+]
+
+
 def run_all_tests(frontend_url: str = None, browser_ws_url: str = None) -> bool:
     """Run all test suites
 
@@ -57,6 +107,19 @@ def run_all_tests(frontend_url: str = None, browser_ws_url: str = None) -> bool:
 
     result = TestResult()
 
+    # Filter test cases based on selection
+    cases_to_run = TEST_CASES
+    if Config.SELECTED_CASES:
+        selected_names = [name.strip() for name in Config.SELECTED_CASES]
+        cases_to_run = [case for case in TEST_CASES if case["name"] in selected_names]
+
+        if not cases_to_run:
+            print(f"✗ No matching test cases found for: {', '.join(selected_names)}")
+            print(f"\nAvailable test cases:")
+            for case in TEST_CASES:
+                print(f"  - {case['name']}")
+            return False
+
     try:
         with PlaywrightClient(
             frontend_url=Config.FRONTEND_URL,
@@ -67,59 +130,12 @@ def run_all_tests(frontend_url: str = None, browser_ws_url: str = None) -> bool:
             print(f"Connected to frontend: {Config.FRONTEND_URL}")
             print(f"Browser WS URL: {Config.BROWSER_WS_URL}")
 
-            # Test 1: Game initialization
-            try:
-                test_game_initialization(client, result)
-            except Exception as e:
-                print(f"\nGame initialization test failed: {e}")
-
-            # Test 2: Single user input
-            try:
-                test_single_user_input(client, result)
-            except Exception as e:
-                print(f"\nSingle user input test failed: {e}")
-
-            # Test 3: Multiple sequential inputs
-            try:
-                test_multiple_sequential_inputs(client, result)
-            except Exception as e:
-                print(f"\nMultiple sequential inputs test failed: {e}")
-
-            # Test 4: Context update after input
-            try:
-                test_context_update_after_input(client, result)
-            except Exception as e:
-                print(f"\nContext update test failed: {e}")
-
-            # Test 5: History list updates
-            try:
-                test_history_list_updates(client, result)
-            except Exception as e:
-                print(f"\nHistory list updates test failed: {e}")
-
-            # Test 6: Event display updates
-            try:
-                test_event_display_updates(client, result)
-            except Exception as e:
-                print(f"\nEvent display updates test failed: {e}")
-
-            # Test 7: Context display structure
-            try:
-                test_context_display_structure(client, result)
-            except Exception as e:
-                print(f"\nContext display structure test failed: {e}")
-
-            # Test 8: Rollback button visibility
-            try:
-                test_rollback_button_visibility(client, result)
-            except Exception as e:
-                print(f"\nRollback button visibility test failed: {e}")
-
-            # Test 9: Rollback with confirmation
-            try:
-                test_rollback_with_confirmation(client, result)
-            except Exception as e:
-                print(f"\nRollback with confirmation test failed: {e}")
+            # Run selected test cases
+            for case in cases_to_run:
+                try:
+                    case["function"](client, result)
+                except Exception as e:
+                    print(f"\n{case['description']} test failed: {e}")
 
     except ConnectionError as e:
         print(f"\n✗ Connection failed: {e}")

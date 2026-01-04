@@ -12,6 +12,9 @@ class Config:
     # Test context limits
     CONTEXT_MAX_FIELDS = 16
 
+    # Test case selection
+    SELECTED_CASES = os.getenv("SELECTED_CASES", "").split(",") if os.getenv("SELECTED_CASES") else None
+
     @classmethod
     def validate(cls):
         """Validate required configuration"""
@@ -26,5 +29,9 @@ class Config:
         print("=" * 50)
         print(f"Service URL: {cls.SERVICE_URL}")
         print(f"Context Max Fields: {cls.CONTEXT_MAX_FIELDS}")
+        if cls.SELECTED_CASES:
+            print(f"Selected Cases: {', '.join(cls.SELECTED_CASES)}")
+        else:
+            print(f"Selected Cases: All")
         print("=" * 50)
         print()

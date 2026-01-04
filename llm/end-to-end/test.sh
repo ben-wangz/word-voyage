@@ -25,6 +25,18 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Collect environment variables with TEST_ prefix
+collect_test_env_vars() {
+    local env_args=""
+    while IFS='=' read -r name value; do
+        if [[ $name == TEST_* ]]; then
+            local clean_name="${name#TEST_}"
+            env_args="$env_args -e ${clean_name}=${value}"
+        fi
+    done < <(env)
+    echo "$env_args"
+}
+
 # Parse command line arguments
 CLEANUP_ONLY=0
 SKIP_BUILD=0
@@ -78,16 +90,6 @@ fi
 log_info "=========================================="
 log_info "LLM Service E2E Test Suite"
 log_info "=========================================="
-log_warn "This test requires OPENAI_API_KEY environment variable to be set."
-log_info ""
-
-# Check for OPENAI_API_KEY
-if [ -z "$OPENAI_API_KEY" ]; then
-    log_error "OPENAI_API_KEY environment variable is not set"
-    log_error "Please set it before running tests:"
-    log_error "  export OPENAI_API_KEY='your-api-key'"
-    exit 1
-fi
 
 log_info "Step 1: Starting LLM Service..."
 if [ $SKIP_BUILD -eq 0 ]; then
@@ -123,7 +125,12 @@ bash "$SCRIPT_DIR/build.sh"
 log_info ""
 log_info "Step 2: Running tests in container..."
 log_info "Executing tests..."
+
+# Collect TEST_ environment variables
+TEST_ENV_VARS=$(collect_test_env_vars)
+
 podman run --rm \
     --add-host=host.containers.internal:host-gateway \
+    $TEST_ENV_VARS \
     llm-e2e:latest \
     python -m src.run_tests

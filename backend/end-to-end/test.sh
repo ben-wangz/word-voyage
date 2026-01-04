@@ -25,6 +25,18 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Collect environment variables with TEST_ prefix
+collect_test_env_vars() {
+    local env_args=""
+    while IFS='=' read -r name value; do
+        if [[ $name == TEST_* ]]; then
+            local clean_name="${name#TEST_}"
+            env_args="$env_args -e ${clean_name}=${value}"
+        fi
+    done < <(env)
+    echo "$env_args"
+}
+
 # Parse command line arguments
 CLEANUP_ONLY=0
 SKIP_BUILD=0
@@ -118,6 +130,11 @@ bash "$SCRIPT_DIR/build.sh"
 log_info ""
 log_info "Step 2: Running tests in container..."
 log_info "Executing tests..."
+
+# Collect TEST_ environment variables
+TEST_ENV_VARS=$(collect_test_env_vars)
+
 podman run --rm \
+    $TEST_ENV_VARS \
     backend-e2e:latest \
     python -m src.run_tests

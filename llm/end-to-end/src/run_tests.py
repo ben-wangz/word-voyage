@@ -18,6 +18,31 @@ from .case.test_generate import (
 )
 
 
+# Test case registry
+TEST_CASES = [
+    {
+        "name": "test_health_check",
+        "function": test_health_check,
+        "description": "Health check"
+    },
+    {
+        "name": "test_simple_generation",
+        "function": test_simple_generation,
+        "description": "Simple generation"
+    },
+    {
+        "name": "test_context_changes",
+        "function": test_context_changes,
+        "description": "Context changes"
+    },
+    {
+        "name": "test_context_limit",
+        "function": test_context_limit,
+        "description": "Context limit"
+    }
+]
+
+
 def run_all_tests(service_url: str = None) -> bool:
     """Run all test suites
 
@@ -43,32 +68,31 @@ def run_all_tests(service_url: str = None) -> bool:
 
     result = TestResult()
 
+    # Filter test cases based on selection
+    cases_to_run = TEST_CASES
+    if Config.SELECTED_CASES:
+        selected_names = [name.strip() for name in Config.SELECTED_CASES]
+        cases_to_run = [case for case in TEST_CASES if case["name"] in selected_names]
+
+        if not cases_to_run:
+            print(f"✗ No matching test cases found for: {', '.join(selected_names)}")
+            print(f"\nAvailable test cases:")
+            for case in TEST_CASES:
+                print(f"  - {case['name']}")
+            return False
+
     try:
         with LLMClient(service_url=Config.SERVICE_URL) as client:
             print(f"Connected to service: {Config.SERVICE_URL}")
             print(f"Service status: {client.service_name}")
             print()
 
-            # Run all tests
-            try:
-                test_health_check(client, result)
-            except Exception as e:
-                print(f"\nHealth check failed: {e}")
-
-            try:
-                test_simple_generation(client, result)
-            except Exception as e:
-                print(f"\nSimple generation test failed: {e}")
-
-            try:
-                test_context_changes(client, result)
-            except Exception as e:
-                print(f"\nContext changes test failed: {e}")
-
-            try:
-                test_context_limit(client, result)
-            except Exception as e:
-                print(f"\nContext limit test failed: {e}")
+            # Run selected test cases
+            for case in cases_to_run:
+                try:
+                    case["function"](client, result)
+                except Exception as e:
+                    print(f"\n{case['description']} test failed: {e}")
 
     except ConnectionError as e:
         print(f"\n✗ Connection failed: {e}")

@@ -279,6 +279,9 @@ def test_rollback_with_confirmation(client: PlaywrightClient, result: TestResult
 
     start_time = time.time()
     try:
+        # Get initial history count
+        initial_history_count = client.get_history_count()
+
         # Process 3 steps
         initial_event = client.get_current_event_text()
         client.submit_user_input("Action 1")
@@ -294,9 +297,9 @@ def test_rollback_with_confirmation(client: PlaywrightClient, result: TestResult
 
         client.capture_screenshot("01_three_steps_completed")
 
-        # Verify we have 3 history items
+        # Verify we added 3 history items
         history_count_before = client.get_history_count()
-        assert history_count_before == 3, f"Expected 3 history items, got {history_count_before}"
+        assert history_count_before == initial_history_count + 3, f"Expected {initial_history_count + 3} history items, got {history_count_before}"
 
         # Find first history item and rollback button
         history_items = client.page.query_selector_all(".history-item")
@@ -310,7 +313,8 @@ def test_rollback_with_confirmation(client: PlaywrightClient, result: TestResult
         client.capture_screenshot("02_hover_first_item")
 
         # Click rollback button - should show confirmation dialog
-        client.page.on("dialog", lambda dialog: dialog.dismiss())  # Dismiss first time
+        dismiss_handler = lambda dialog: dialog.dismiss()
+        client.page.on("dialog", dismiss_handler)
         rollback_button.click()
         client.page.wait_for_timeout(500)
 
@@ -318,10 +322,10 @@ def test_rollback_with_confirmation(client: PlaywrightClient, result: TestResult
 
         # Verify nothing changed after cancel
         history_count_after_cancel = client.get_history_count()
-        assert history_count_after_cancel == 3, f"History should not change after cancel, got {history_count_after_cancel}"
+        assert history_count_after_cancel == initial_history_count + 3, f"History should not change after cancel, got {history_count_after_cancel}"
 
         # Click again and accept
-        client.page.remove_listener("dialog", lambda dialog: dialog.dismiss())
+        client.page.remove_listener("dialog", dismiss_handler)
         client.page.on("dialog", lambda dialog: dialog.accept())
 
         first_item.hover()
@@ -331,9 +335,9 @@ def test_rollback_with_confirmation(client: PlaywrightClient, result: TestResult
 
         client.capture_screenshot("04_after_accept")
 
-        # Verify history reduced to 1 (rolled back to index 0)
+        # Verify history reduced to initial + 1 (rolled back to first item)
         history_count_after_rollback = client.get_history_count()
-        assert history_count_after_rollback == 1, f"Expected 1 history item after rollback to index 0, got {history_count_after_rollback}"
+        assert history_count_after_rollback == initial_history_count + 1, f"Expected {initial_history_count + 1} history items after rollback, got {history_count_after_rollback}"
 
         client.capture_screenshot("05_rollback_completed")
 
