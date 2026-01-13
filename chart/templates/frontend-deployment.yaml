@@ -1,0 +1,68 @@
+apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: {{ include "word-voyage.frontend.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.commonLabels "context" $ ) | nindent 4 }}
+    app.kubernetes.io/component: frontend
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" ( dict "customLabels" .Values.frontend.podLabels "context" $ ) | nindent 6 }}
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.frontend.podLabels "context" $ ) | nindent 8 }}
+        app.kubernetes.io/component: frontend
+      {{- if .Values.frontend.podAnnotations }}
+      annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.frontend.podAnnotations "context" $ ) | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets: {{- include "common.tplvalues.render" ( dict "value" .Values.global.imagePullSecrets "context" $ ) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.frontend.affinity }}
+      affinity: {{- include "common.tplvalues.render" ( dict "value" .Values.frontend.affinity "context" $ ) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.frontend.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" ( dict "value" .Values.frontend.nodeSelector "context" $ ) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.frontend.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" ( dict "value" .Values.frontend.tolerations "context" $ ) | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: frontend
+          image: {{ include "common.images.image" ( dict "imageRoot" .Values.frontend.image "global" .Values.global ) }}
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.frontend.port }}
+              protocol: TCP
+          env:
+            - name: FRONTEND_PORT
+              value: {{ .Values.frontend.port | quote }}
+            - name: BACKEND_HOST
+              value: {{ include "word-voyage.backend.service.name" . }}
+            - name: BACKEND_PORT
+              value: {{ .Values.backend.service.port | quote }}
+          {{- if .Values.frontend.extraEnvVars }}
+          {{- include "common.tplvalues.render" ( dict "value" .Values.frontend.extraEnvVars "context" $ ) | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          {{- if .Values.frontend.resources }}
+          resources: {{- toYaml .Values.frontend.resources | nindent 12 }}
+          {{- end }}

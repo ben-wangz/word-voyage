@@ -1,0 +1,22 @@
+apiVersion: v2
+name: word-voyage
+version: 1.0.0
+appVersion: "1.0.0"
+description: WordVoyage - A vocabulary learning application with LLM support
+type: application
+keywords:
+  - vocabulary
+  - learning
+  - llm
+dependencies:
+  - name: common
+    repository: oci://registry-1.docker.io/bitnamicharts
+    tags:
+      - bitnami-common
+    version: 2.x.x
+  - name: redis
+    repository: oci://registry-1.docker.io/bitnamicharts
+    version: 24.1.0
+    condition: redis.enabled
+maintainers:
+  - name: word-voyage

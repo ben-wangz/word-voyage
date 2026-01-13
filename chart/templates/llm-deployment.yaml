@@ -1,0 +1,81 @@
+apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: {{ include "word-voyage.llm.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.commonLabels "context" $ ) | nindent 4 }}
+    app.kubernetes.io/component: llm
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.llm.replicas }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" ( dict "customLabels" .Values.llm.podLabels "context" $ ) | nindent 6 }}
+      app.kubernetes.io/component: llm
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.llm.podLabels "context" $ ) | nindent 8 }}
+        app.kubernetes.io/component: llm
+      {{- if .Values.llm.podAnnotations }}
+      annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.llm.podAnnotations "context" $ ) | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets: {{- include "common.tplvalues.render" ( dict "value" .Values.global.imagePullSecrets "context" $ ) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.llm.affinity }}
+      affinity: {{- include "common.tplvalues.render" ( dict "value" .Values.llm.affinity "context" $ ) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.llm.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" ( dict "value" .Values.llm.nodeSelector "context" $ ) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.llm.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" ( dict "value" .Values.llm.tolerations "context" $ ) | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: llm
+          image: {{ include "common.images.image" ( dict "imageRoot" .Values.llm.image "global" .Values.global ) }}
+          imagePullPolicy: {{ .Values.llm.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.llm.port }}
+              protocol: TCP
+          env:
+            - name: OPENAI_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "word-voyage.credentials.secretName" . }}
+                  key: openai-base-url
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "word-voyage.credentials.secretName" . }}
+                  key: openai-api-key
+            - name: OPENAI_MODEL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "word-voyage.credentials.secretName" . }}
+                  key: openai-model
+            - name: CONTEXT_MAX_FIELDS
+              value: {{ .Values.llm.contextMaxFields | quote }}
+            - name: LLM_MAX_TOKENS
+              value: {{ .Values.llm.maxTokens | quote }}
+          {{- if .Values.llm.extraEnvVars }}
+          {{- include "common.tplvalues.render" ( dict "value" .Values.llm.extraEnvVars "context" $ ) | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          {{- if .Values.llm.resources }}
+          resources: {{- toYaml .Values.llm.resources | nindent 12 }}
+          {{- end }}

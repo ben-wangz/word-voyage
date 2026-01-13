@@ -1,0 +1,73 @@
+apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: {{ include "word-voyage.backend.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.commonLabels "context" $ ) | nindent 4 }}
+    app.kubernetes.io/component: backend
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" ( dict "customLabels" .Values.backend.podLabels "context" $ ) | nindent 6 }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.backend.podLabels "context" $ ) | nindent 8 }}
+        app.kubernetes.io/component: backend
+      {{- if .Values.backend.podAnnotations }}
+      annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.backend.podAnnotations "context" $ ) | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets: {{- include "common.tplvalues.render" ( dict "value" .Values.global.imagePullSecrets "context" $ ) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.backend.affinity }}
+      affinity: {{- include "common.tplvalues.render" ( dict "value" .Values.backend.affinity "context" $ ) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.backend.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" ( dict "value" .Values.backend.nodeSelector "context" $ ) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.backend.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" ( dict "value" .Values.backend.tolerations "context" $ ) | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: backend
+          image: {{ include "common.images.image" ( dict "imageRoot" .Values.backend.image "global" .Values.global ) }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.port }}
+              protocol: TCP
+          env:
+            - name: REDIS_HOST
+              value: {{ include "word-voyage.redis.host" . | quote }}
+            - name: REDIS_PORT
+              value: {{ include "word-voyage.redis.port" . | quote }}
+            - name: LLM_SERVICE_URL
+              value: http://{{ include "word-voyage.llm.service.name" . }}:{{ .Values.llm.service.port }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "word-voyage.credentials.secretName" . }}
+                  key: jwt-secret
+          {{- if .Values.backend.extraEnvVars }}
+          {{- include "common.tplvalues.render" ( dict "value" .Values.backend.extraEnvVars "context" $ ) | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          {{- if .Values.backend.resources }}
+          resources: {{- toYaml .Values.backend.resources | nindent 12 }}
+          {{- end }}

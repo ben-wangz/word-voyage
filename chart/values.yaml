@@ -1,0 +1,102 @@
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+commonLabels: {}
+commonAnnotations: {}
+
+# Credentials
+credentials:
+  # Use existing secret (if set, the chart will not create a new secret)
+  existingSecret: ""
+  # JWT secret (only used when existingSecret is not set)
+  # If empty, a deterministic value will be generated based on release name and namespace
+  jwtSecret: ""
+  # OpenAI configuration (required, only used when existingSecret is not set)
+  openai:
+    baseUrl: "https://api.openai.com/v1"
+    apiKey: ""
+    model: "gpt-4o"
+
+# LLM Service
+llm:
+  replicas: 1
+  image:
+    repository: wordvoyage-llm
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8011
+  contextMaxFields: 16
+  maxTokens: 3000
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podLabels: {}
+  podAnnotations: {}
+  extraEnvVars: []
+  service:
+    type: ClusterIP
+    port: 8011
+
+# Frontend Service
+frontend:
+  replicas: 1
+  image:
+    repository: wordvoyage-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 3000
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podLabels: {}
+  podAnnotations: {}
+  extraEnvVars: []
+  service:
+    type: ClusterIP
+    port: 3000
+
+# Backend Service
+backend:
+  replicas: 1
+  image:
+    repository: wordvoyage-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8080
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podLabels: {}
+  podAnnotations: {}
+  extraEnvVars: []
+  service:
+    type: ClusterIP
+    port: 8080
+
+# Redis configuration (bitnami/redis subchart)
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    service:
+      ports:
+        redis: 6379
+  # External Redis (when redis.enabled=false)
+  external:
+    host: ""
+    port: 6379
+
+# Ingress configuration
+ingress:
+  enabled: false
+  ingressClassName: ""
+  hostname: word-voyage.local
+  annotations: {}
+  tls: false
+  tlsSecret: ""
