@@ -1,0 +1,6 @@
+name: WordVoyage Backend
+container_name: wordvoyage-backend
+image_name: wordvoyage-backend
+default_port: 8080
+internal_port: 8080
+health_check: /api/health

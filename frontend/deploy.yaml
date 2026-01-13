@@ -1,0 +1,6 @@
+name: WordVoyage Frontend
+container_name: wordvoyage-frontend
+image_name: wordvoyage-frontend
+default_port: 3000
+internal_port: 3000
+health_check: null

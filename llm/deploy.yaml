@@ -1,0 +1,6 @@
+name: OpenAI LLM Service
+container_name: openai-llm-service
+image_name: wordvoyage-llm
+default_port: 8011
+internal_port: 8011
+health_check: /health
