@@ -5,7 +5,8 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-DEPLOY_SCRIPT="$PROJECT_ROOT/deploy.sh"
+DEPLOY_SCRIPT="$PROJECT_ROOT/../tools/deploy.sh"
+MODULE="backend"
 
 # Colors
 GREEN='\033[0;32m'
@@ -74,7 +75,7 @@ cd "$PROJECT_ROOT"
 cleanup() {
     log_info "Cleaning up after 15 seconds..."
     sleep 15
-    bash "$DEPLOY_SCRIPT" --action stop
+    bash "$DEPLOY_SCRIPT" "$MODULE" --action stop
 }
 
 # Set trap for cleanup on exit
@@ -99,10 +100,10 @@ log_info "Enabling DEBUG logging for backend service..."
 export SERVICE_LOG_LEVEL=debug
 if [ $SKIP_BUILD -eq 0 ]; then
     log_info "Building Backend image..."
-    bash "$DEPLOY_SCRIPT" --action start --build
+    bash "$DEPLOY_SCRIPT" "$MODULE" --action start --build
 else
     log_info "Skipping build (--skip-build flag set)"
-    bash "$DEPLOY_SCRIPT" --action start
+    bash "$DEPLOY_SCRIPT" "$MODULE" --action start
 fi
 
 sleep 3
@@ -116,7 +117,7 @@ for i in {1..30}; do
     fi
     if [ $i -eq 30 ]; then
         log_error "Service failed to start within 30 seconds"
-        bash "$DEPLOY_SCRIPT" --action stop
+        bash "$DEPLOY_SCRIPT" "$MODULE" --action stop
         exit 1
     fi
     echo -n "."
