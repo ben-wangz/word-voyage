@@ -1,0 +1,107 @@
+name: publish-images
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Optional tag to use for the images (e.g. latest)"
+        required: false
+        type: string
+        default: "latest"
+      push:
+        description: "Push the images to the registry"
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches:
+      - "main"
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push-images:
+    strategy:
+      matrix:
+        include:
+          - module: "llm"
+            name_suffix: "llm"
+          - module: "frontend"
+            name_suffix: "frontend"
+          - module: "backend"
+            name_suffix: "backend"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: checkout-repository
+      uses: actions/checkout@v4
+
+    - name: read-version-file
+      id: version
+      run: |
+        VERSION=$(cat ${{ matrix.module }}/VERSION | tr -d '[:space:]')
+
+        # Validate semver format (X.Y.Z or X.Y.Z-prerelease+metadata)
+        if ! echo "${VERSION}" | grep -Pq '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'; then
+          echo "Error: VERSION file contains invalid semver version: ${VERSION}"
+          echo "Expected format: X.Y.Z (e.g., 1.0.0, 2.1.3, 1.0.0-alpha.1, 1.0.0+build.123)"
+          exit 1
+        fi
+
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Read version ${VERSION} from ${{ matrix.module }}/VERSION"
+
+    - name: setup-podman
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y podman
+        podman --version
+
+    - name: log-in-to-registry
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | podman login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+    - name: generate-tags
+      id: tags
+      run: |
+        IMAGE_NAME="${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.name_suffix }}"
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ inputs.tag }}" ]; then
+          # Manual trigger with custom tag
+          VERSION="${{ inputs.tag }}"
+        else
+          # Auto trigger: use VERSION file
+          VERSION="${{ steps.version.outputs.version }}"
+        fi
+        echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Generated image: ${IMAGE_NAME}:${VERSION}"
+
+    - name: build-and-push-image
+      run: |
+        export IMAGE_NAME="${{ steps.tags.outputs.image_name }}"
+        export VERSION="${{ steps.tags.outputs.version }}"
+
+        # Determine if we should push
+        PUSH_FLAG=""
+        if [ "${{ inputs.push }}" == "true" ] || [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          PUSH_FLAG="--push"
+        fi
+
+        ./tools/build.sh ${{ matrix.module }} $PUSH_FLAG
+
+    - name: output-summary
+      run: |
+        echo "### Build Summary for ${{ matrix.module }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Module**: ${{ matrix.module }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version**: ${{ steps.tags.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Image**: ${{ steps.tags.outputs.image_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tags**: ${{ steps.tags.outputs.version }}, latest" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ inputs.push }}" == "true" ] || [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          echo "- **Pushed**: ✅ Yes" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- **Pushed**: ❌ No (dry run)" >> $GITHUB_STEP_SUMMARY
+        fi
