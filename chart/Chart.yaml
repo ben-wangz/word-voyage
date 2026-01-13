@@ -8,6 +8,17 @@ keywords:
   - vocabulary
   - learning
   - llm
+annotations:
+  word-voyage/images: |
+    - name: frontend
+      path: frontend
+      valuesKey: frontend.image.tag
+    - name: backend
+      path: backend
+      valuesKey: backend.image.tag
+    - name: llm
+      path: llm
+      valuesKey: llm.image.tag
 dependencies:
   - name: common
     repository: oci://registry-1.docker.io/bitnamicharts
