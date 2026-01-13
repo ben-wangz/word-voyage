@@ -125,7 +125,7 @@ stop_app() {
 start_app() {
     if [ $BUILD_IMAGE -eq 1 ]; then
         log_info "Building OpenAI LLM image..."
-        bash "$SCRIPT_DIR/build.sh"
+        bash "$SCRIPT_DIR/../tools/build.sh" llm
     fi
 
     log_info "Starting OpenAI LLM Service..."

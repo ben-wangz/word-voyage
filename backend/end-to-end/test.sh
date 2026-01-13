@@ -125,7 +125,7 @@ done
 
 log_info ""
 log_info "Building test image..."
-bash "$SCRIPT_DIR/build.sh"
+bash "$SCRIPT_DIR/../tools/build.sh" backend
 
 log_info ""
 log_info "Step 2: Running tests in container..."

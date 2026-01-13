@@ -125,7 +125,7 @@ stop_app() {
 start_app() {
     if [ $BUILD_IMAGE -eq 1 ]; then
         log_info "Building WordVoyage frontend image..."
-        bash "$SCRIPT_DIR/build.sh"
+        bash "$SCRIPT_DIR/../tools/build.sh" frontend
     fi
 
     log_info "Starting WordVoyage Frontend Service..."
