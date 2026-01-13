@@ -16,6 +16,10 @@ Type to interact, AI to generate—explore infinite, dynamic worlds driven by na
 
 See [.claude/skills/version-control/SKILL.md](.claude/skills/version-control/SKILL.md)
 
+## Local Tests
+
+See [.claude/skills/local-tests/SKILL.md](.claude/skills/local-tests/SKILL.md)
+
 ## Contributing
 PRs & issues are welcome! Feel free to propose features or report bugs.
 
