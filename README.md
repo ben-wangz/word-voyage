@@ -12,6 +12,10 @@ Type to interact, AI to generate—explore infinite, dynamic worlds driven by na
 
 ## Quick Start
 
+## Version Control
+
+See [.claude/skills/version-control/SKILL.md](.claude/skills/version-control/SKILL.md)
+
 ## Contributing
 PRs & issues are welcome! Feel free to propose features or report bugs.
 
