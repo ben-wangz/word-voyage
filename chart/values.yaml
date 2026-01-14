@@ -57,6 +57,16 @@ frontend:
   service:
     type: ClusterIP
     port: 3000
+    nodePort: ""
+    clusterIP: ""
+    externalTrafficPolicy: Cluster
+    sessionAffinity: ""
+    sessionAffinityConfig: {}
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+    loadBalancerClass: ""
+    annotations: {}
+    extraPorts: []
 
 # Backend Service
 backend:
