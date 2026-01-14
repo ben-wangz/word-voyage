@@ -20,6 +20,10 @@ See [.claude/skills/version-control/SKILL.md](.claude/skills/version-control/SKI
 
 See [.claude/skills/local-tests/SKILL.md](.claude/skills/local-tests/SKILL.md)
 
+## Helm Chart Lint
+
+See [.claude/skills/chart-lint/SKILL.md](.claude/skills/chart-lint/SKILL.md)
+
 ## Contributing
 PRs & issues are welcome! Feel free to propose features or report bugs.
 
