@@ -259,6 +259,42 @@ ingress:
   enabled: false
   ingressClassName: ""
   hostname: word-voyage.local
+  path: /
+  pathType: Prefix
   annotations: {}
   tls: false
   tlsSecret: ""
+  extraHosts: []
+  # - host: word-voyage-extra.local
+  #   http:
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+  #         backend:
+  #           service:
+  #             name: word-voyage-frontend
+  #             port:
+  #               number: 8080
+  extraPaths: []
+  # - path: /api
+  #   pathType: Prefix
+  #   backend:
+  #     service:
+  #       name: word-voyage-backend
+  #       port:
+  #         number: 8000
+  extraTls: []
+  # - hosts:
+  #     - word-voyage-extra.local
+  #   secretName: word-voyage-extra-tls
+  extraRules: []
+  # - host: word-voyage-custom.local
+  #   http:
+  #     paths:
+  #       - path: /custom
+  #         pathType: Prefix
+  #         backend:
+  #           service:
+  #             name: custom-service
+  #             port:
+  #               number: 9000
