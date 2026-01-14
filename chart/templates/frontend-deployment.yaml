@@ -10,6 +10,10 @@ metadata:
   {{- end }}
 spec:
   replicas: {{ .Values.frontend.replicas }}
+  revisionHistoryLimit: {{ .Values.frontend.revisionHistoryLimit }}
+  {{- if .Values.frontend.updateStrategy }}
+  strategy: {{- toYaml .Values.frontend.updateStrategy | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels: {{- include "common.labels.matchLabels" ( dict "customLabels" .Values.frontend.podLabels "context" $ ) | nindent 6 }}
       app.kubernetes.io/component: frontend
@@ -26,6 +30,11 @@ spec:
       {{- end }}
       {{- if .Values.frontend.affinity }}
       affinity: {{- include "common.tplvalues.render" ( dict "value" .Values.frontend.affinity "context" $ ) | nindent 8 }}
+      {{- else }}
+      affinity:
+        podAffinity: {{- include "common.affinities.pods" ( dict "type" .Values.frontend.podAffinityPreset "customLabels" .Values.frontend.podLabels "context" $ ) | nindent 10 }}
+        podAntiAffinity: {{- include "common.affinities.pods" ( dict "type" .Values.frontend.podAntiAffinityPreset "customLabels" .Values.frontend.podLabels "context" $ ) | nindent 10 }}
+        nodeAffinity: {{- include "common.affinities.nodes" ( dict "type" .Values.frontend.nodeAffinityPreset.type "key" .Values.frontend.nodeAffinityPreset.key "values" .Values.frontend.nodeAffinityPreset.values ) | nindent 10 }}
       {{- end }}
       {{- if .Values.frontend.nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" ( dict "value" .Values.frontend.nodeSelector "context" $ ) | nindent 8 }}
@@ -33,10 +42,19 @@ spec:
       {{- if .Values.frontend.tolerations }}
       tolerations: {{- include "common.tplvalues.render" ( dict "value" .Values.frontend.tolerations "context" $ ) | nindent 8 }}
       {{- end }}
+      {{- if .Values.frontend.podSecurityContext.enabled }}
+      securityContext: {{- include "common.compatibility.renderSecurityContext" ( dict "secContext" .Values.frontend.podSecurityContext "context" $ ) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.frontend.hostname }}
+      hostname: {{ .Values.frontend.hostname }}
+      {{- end }}
       containers:
         - name: frontend
           image: {{ include "common.images.image" ( dict "imageRoot" .Values.frontend.image "global" .Values.global ) }}
           imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          {{- if .Values.frontend.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" ( dict "secContext" .Values.frontend.containerSecurityContext "context" $ ) | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.frontend.port }}
@@ -51,18 +69,51 @@ spec:
           {{- if .Values.frontend.extraEnvVars }}
           {{- include "common.tplvalues.render" ( dict "value" .Values.frontend.extraEnvVars "context" $ ) | nindent 12 }}
           {{- end }}
+          {{- if .Values.frontend.extraEnvVarsSecret }}
+          envFrom:
+          - secretRef:
+              name: {{ .Values.frontend.extraEnvVarsSecret }}
+          {{- end }}
+          {{- if .Values.frontend.extraVolumeMounts }}
+          volumeMounts:
+          {{- include "common.tplvalues.render" (dict "value" .Values.frontend.extraVolumeMounts "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.frontend.customLivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.frontend.customLivenessProbe "context" $) | nindent 12 }}
+          {{- else }}
           livenessProbe:
             httpGet:
               path: /
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
+          {{- end }}
+          {{- if .Values.frontend.customReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.frontend.customReadinessProbe "context" $) | nindent 12 }}
+          {{- else }}
           readinessProbe:
             httpGet:
               path: /
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
+          {{- end }}
+          {{- if .Values.frontend.customStartupProbe }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.frontend.customStartupProbe "context" $) | nindent 12 }}
+          {{- else if .Values.frontend.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: {{ .Values.frontend.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.frontend.startupProbe.periodSeconds }}
+          {{- end }}
           {{- if .Values.frontend.resources }}
           resources: {{- toYaml .Values.frontend.resources | nindent 12 }}
+          {{- else if ne .Values.frontend.resourcesPreset "none" }}
+          resources: {{- include "common.resources.preset" (dict "type" .Values.frontend.resourcesPreset) | nindent 12 }}
           {{- end }}
+      {{- if .Values.frontend.extraVolumes }}
+      volumes:
+      {{- include "common.tplvalues.render" (dict "value" .Values.frontend.extraVolumes "context" $) | nindent 6 }}
+      {{- end }}

@@ -1,12 +1,10 @@
 llm:
   image:
     repository: ghcr.io/ben-wangz/word-voyage-llm
-    pullPolicy: Always
 
 frontend:
   image:
     repository: ghcr.io/ben-wangz/word-voyage-frontend
-    pullPolicy: Always
   service:
     type: NodePort
     nodePort: 31300
@@ -14,4 +12,3 @@ frontend:
 backend:
   image:
     repository: ghcr.io/ben-wangz/word-voyage-backend
-    pullPolicy: Always
