@@ -12,6 +12,23 @@ Type to interact, AI to generate—explore infinite, dynamic worlds driven by na
 
 ## Quick Start
 
+Install WordVoyage using Helm:
+
+```bash
+# Get the latest chart version
+CHART_VERSION=$(bash tools/version/get-version.sh chart)
+
+# Install with Helm
+helm upgrade --install word-voyage \
+  oci://ghcr.io/ben-wangz/word-voyage-charts/word-voyage \
+  --version ${CHART_VERSION} \
+  --namespace word-voyage \
+  --create-namespace \
+  --set credentials.openai.baseUrl="your-openai-base-url" \
+  --set credentials.openai.apiKey="your-openai-api-key" \
+  --set credentials.openai.model="your-openai-model"
+```
+
 ## Version Control
 
 See [.claude/skills/version-control/SKILL.md](.claude/skills/version-control/SKILL.md)

@@ -23,6 +23,24 @@ Follows [Semantic Versioning 2.0](https://semver.org/)
 | `tools/version/bump-image-version.sh` | Bump service image version |
 | `tools/version/bump-chart-version.sh` | Bump chart version, optionally sync image tags |
 
+### get-version.sh Usage
+
+```bash
+# List all versions
+bash tools/version/get-version.sh
+
+# Get chart version
+bash tools/version/get-version.sh chart
+
+# Get chart appVersion
+bash tools/version/get-version.sh chart app
+
+# Get service image version
+bash tools/version/get-version.sh frontend image
+bash tools/version/get-version.sh backend image
+bash tools/version/get-version.sh llm image
+```
+
 ## Workflow
 
 1. Bump image versions: `bash tools/version/bump-image-version.sh <service> <major|minor|patch>`
