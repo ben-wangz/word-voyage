@@ -24,6 +24,10 @@ See [.claude/skills/local-tests/SKILL.md](.claude/skills/local-tests/SKILL.md)
 
 See [.claude/skills/chart-lint/SKILL.md](.claude/skills/chart-lint/SKILL.md)
 
+## Helm Chart Test
+
+See [.claude/skills/chart-test/SKILL.md](.claude/skills/chart-test/SKILL.md)
+
 ## Contributing
 PRs & issues are welcome! Feel free to propose features or report bugs.
 
