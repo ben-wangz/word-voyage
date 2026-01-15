@@ -6,6 +6,7 @@ import { ContextDisplay } from '../components/ContextDisplay';
 import { InputForm } from '../components/InputForm';
 import { EventHistory } from '../components/EventHistory';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { UserStatusBar } from '../components/UserStatusBar';
 
 export function GamePage() {
   const { t, i18n } = useTranslation();
@@ -122,6 +123,7 @@ export function GamePage() {
 
   return (
     <div className="game-page">
+      <UserStatusBar />
       <header className="game-header">
         <div>
           <div>

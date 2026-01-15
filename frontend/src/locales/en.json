@@ -28,5 +28,38 @@
     "prefix": "Error:",
     "sessionExpired": "Session expired. Please refresh the page to restart.",
     "accessDenied": "Access denied to this resource."
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "emailPlaceholder": "Enter your email",
+    "passwordPlaceholder": "Enter your password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "loggingIn": "Logging in...",
+    "registering": "Registering...",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "anonymousPlay": "Play as Guest",
+    "or": "OR",
+    "guestMode": "Guest Mode",
+    "guestModeWarning": "Guest mode cannot save progress long-term. Click to register.",
+    "errors": {
+      "emailPasswordRequired": "Email and password required",
+      "allFieldsRequired": "All fields are required",
+      "invalidEmail": "Invalid email format",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "passwordMismatch": "Passwords do not match",
+      "INVALID_CREDENTIALS": "Invalid email or password",
+      "EMAIL_EXISTS": "Email already registered",
+      "INVALID_INPUT": "Invalid input",
+      "INVALID_TOKEN": "Invalid or expired token",
+      "UNAUTHORIZED": "Authorization required",
+      "NETWORK_ERROR": "Network error. Please try again.",
+      "UNKNOWN_ERROR": "An unknown error occurred"
+    }
   }
 }
