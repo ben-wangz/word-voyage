@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+const API_BASE = '/api/auth';
 
 export interface User {
   userId: string;
@@ -35,7 +35,7 @@ class AuthService {
 
   async login(email: string, password: string): Promise<LoginResponse> {
     try {
-      const response = await fetch(`${API_BASE}/api/auth/login`, {
+      const response = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ class AuthService {
 
   async register(email: string, password: string): Promise<RegisterResponse> {
     try {
-      const response = await fetch(`${API_BASE}/api/auth/register`, {
+      const response = await fetch(`${API_BASE}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ class AuthService {
 
   async logout(): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE}/api/auth/logout`, {
+      const response = await fetch(`${API_BASE}/logout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,13 +98,9 @@ class AuthService {
 
   async getCurrentUser(): Promise<User | null> {
     try {
-      const response = await fetch(`${API_BASE}/api/game/start`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(`${API_BASE}/me`, {
+        method: 'GET',
         credentials: 'include',
-        body: JSON.stringify({ language: 'en' }),
       });
 
       if (!response.ok) {
@@ -113,11 +109,11 @@ class AuthService {
 
       const data = await response.json();
 
-      if (data.step?.context?.userId) {
-        const userId = data.step.context.userId;
+      if (data.user) {
         return {
-          userId,
-          type: 'guest',
+          userId: data.user.userId,
+          email: data.user.email,
+          type: data.user.email ? 'registered' : 'guest',
         };
       }
 

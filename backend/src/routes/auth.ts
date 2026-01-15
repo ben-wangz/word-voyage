@@ -152,6 +152,32 @@ authRouter.post('/logout', async (c) => {
   }
 });
 
+authRouter.get('/me', async (c) => {
+  try {
+    const t = c.get('t') as I18nContext['t'];
+    const userId = c.get('userId') as string;
+
+    if (!userId) {
+      return c.json({ error: { code: 'UNAUTHORIZED', message: t('auth:errors.unauthorized', 'Authorization required') } }, 401);
+    }
+
+    const userService = getUser();
+    const user = await userService.getUser(userId);
+
+    if (!user) {
+      return c.json({ error: { code: 'USER_NOT_FOUND', message: t('auth:errors.userNotFound', 'User not found') } }, 404);
+    }
+
+    const { passwordHash, ...userWithoutPassword } = user;
+
+    return c.json({ user: userWithoutPassword });
+  } catch (error: any) {
+    console.error('Get current user error:', error);
+    const t = c.get('t') as I18nContext['t'];
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: t('common:errors.internalError', error.message) } }, 500);
+  }
+});
+
 authRouter.get('/oidc/authorize', async (c) => {
   return c.json({ error: { code: 'NOT_IMPLEMENTED', message: 'OIDC not implemented' } }, 501);
 });
