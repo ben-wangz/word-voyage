@@ -77,6 +77,49 @@ export function GamePage() {
     }
   };
 
+  const renderContextGrid = () => {
+    if (!context) return null;
+
+    const stateEntries = Object.entries(context.state || {});
+    const gameTimeEntry = ['gameTime', `${Math.floor((context.gameTime || 0) / 3600)} hours`];
+    const allEntries = [...stateEntries, gameTimeEntry];
+
+    const placeholderEntries = [
+      ['─', '─'],
+      ['•', '•'],
+      ['◆', '◆'],
+      ['▪', '▪']
+    ];
+
+    const totalSlots = Math.ceil(allEntries.length / 4) * 4;
+    const paddedEntries = [...allEntries];
+    let placeholderIndex = 0;
+
+    while (paddedEntries.length < totalSlots) {
+      paddedEntries.push(placeholderEntries[placeholderIndex % placeholderEntries.length]);
+      placeholderIndex++;
+    }
+
+    return (
+      <div className="context-display">
+        <h3>{t('context.title')}</h3>
+        <div className="context-grid">
+          {paddedEntries.map((entry, index) => {
+            const [key, field] = entry;
+            const value = typeof field === 'object' ? field.value : field;
+            const isPlaceholder = key === '─' || key === '•' || key === '◆' || key === '▪';
+            return (
+              <div key={`${key}-${index}`} className={`context-item ${isPlaceholder ? 'placeholder' : ''}`}>
+                <span className="context-key">{key}</span>
+                <span className="context-value">{value}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="game-page">
       <header className="game-header">
@@ -97,12 +140,12 @@ export function GamePage() {
 
       <main className="game-main">
         <div className="left-panel">
+          {renderContextGrid()}
           <EventDisplay event={currentStep?.event} isLoading={loading} />
           <InputForm onSubmit={handleSubmitInput} disabled={loading} />
         </div>
 
         <aside className="right-panel">
-          <ContextDisplay context={context} />
           <EventHistory events={history.slice(0, -1)} onRollback={handleRollback} />
         </aside>
       </main>
