@@ -28,14 +28,20 @@ body {
 .game-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   color: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .game-header > div {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.game-header > div > div {
   text-align: left;
 }
 
@@ -52,28 +58,37 @@ body {
 .language-switcher {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }
 
 .language-switcher button {
-  padding: 0.5rem 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.2s;
+  position: relative;
 }
 
 .language-switcher button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .language-switcher button.active {
+  color: white;
+  font-weight: 600;
+}
+
+.language-switcher button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
   background: white;
-  color: #667eea;
-  border-color: white;
 }
 
 .error-message {
@@ -88,7 +103,7 @@ body {
 .game-main {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 65fr 35fr;
   gap: 1rem;
   padding: 1rem;
   max-width: 1400px;
@@ -100,6 +115,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  height: 100%;
+  position: relative;
 }
 
 .event-display {
@@ -110,6 +127,7 @@ body {
   padding: 1.5rem;
   overflow-y: auto;
   min-height: 300px;
+  margin-bottom: 140px;
 }
 
 .event-display.empty {
@@ -154,15 +172,20 @@ body {
 
 .input-form {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-direction: row;
+  gap: 0.75rem;
   background-color: #2a2a2a;
   border: 1px solid #3a3a3a;
   border-radius: 8px;
   padding: 1.5rem;
+  position: sticky;
+  bottom: 1rem;
+  z-index: 10;
+  align-items: flex-end;
 }
 
 .input-form textarea {
+  flex: 1;
   background-color: #1a1a1a;
   border: 1px solid #3a3a3a;
   border-radius: 4px;
@@ -171,6 +194,7 @@ body {
   font-family: inherit;
   font-size: 1rem;
   resize: none;
+  min-width: 0;
 }
 
 .input-form textarea:focus {
@@ -193,6 +217,9 @@ body {
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 80px;
 }
 
 .input-form button:hover:not(:disabled) {

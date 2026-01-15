@@ -81,10 +81,12 @@ export function GamePage() {
     <div className="game-page">
       <header className="game-header">
         <div>
-          <h1>{t('app.title')}</h1>
-          <p>{t('app.subtitle')}</p>
+          <div>
+            <h1>{t('app.title')}</h1>
+            <p>{t('app.subtitle')}</p>
+          </div>
+          <LanguageSwitcher />
         </div>
-        <LanguageSwitcher />
       </header>
 
       {error && (
