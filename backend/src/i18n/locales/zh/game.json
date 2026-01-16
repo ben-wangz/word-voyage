@@ -3,12 +3,27 @@
     "eventDescription": "@file:./initialEvent.txt",
     "summary": "游戏开始。玩家在坠毁的飞船中醒来。",
     "state": {
-      "health": "生命值",
-      "hunger": "饥饿度",
-      "thirst": "口渴度",
-      "energy": "精力值",
-      "location": "当前位置"
-    },
-    "locationValue": "坠毁的飞船"
+      "health": {
+        "name": "生命值",
+        "description": "角色的生命值，降至0会死亡"
+      },
+      "hunger": {
+        "name": "饥饿度",
+        "description": "饥饿程度，过高会影响生命值"
+      },
+      "thirst": {
+        "name": "口渴度",
+        "description": "口渴程度，过高会影响生命值"
+      },
+      "energy": {
+        "name": "精力值",
+        "description": "精力水平，影响行动能力"
+      },
+      "location": {
+        "name": "位置",
+        "value": "坠毁的飞船",
+        "description": "游戏世界中的当前位置"
+      }
+    }
   }
 }

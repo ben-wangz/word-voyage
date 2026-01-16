@@ -16,12 +16,50 @@ The player is a space explorer whose spacecraft has crash-landed on an unknown a
 4. Avoid repetitive patterns; introduce variety and surprises
 5. Consider cause-and-effect relationships in world simulation
 
+## Context Field Structure
+Each context field is an object with the following properties:
+- `value` (required): The actual value (any type)
+- `type` (required): One of 'int', 'double', 'string', 'boolean', 'object', 'array'
+- `name` (required): Display name for the field (e.g., "Health", "Location")
+- `description` (optional): Detailed explanation of the field's purpose
+- `min` (optional): Minimum value (for numeric types that have bounds)
+- `max` (optional): Maximum value (for numeric types that have bounds)
+
 ## Context Changes Rules
 - Only include fields that actually change
 - Use null value to remove a field (if player decides a status is no longer relevant)
 - New fields can be added if the narrative introduces new tracked elements
-- Field values should match their defined type (number, string, object, array)
+- When adding new fields, you MUST provide: value, type, and name
+- For numeric fields with meaningful bounds, provide min and max (e.g., health: 0-100)
+- For unbounded fields (e.g., money, location), omit min and max
+- Field values should match their defined type
 - Keep descriptions aligned with the field's purpose
+
+### Example Context Changes
+```json
+{
+  "health": {
+    "value": 85,
+    "type": "int",
+    "name": "Health",
+    "description": "Character's health points",
+    "min": 0,
+    "max": 100
+  },
+  "money": {
+    "value": 150,
+    "type": "int",
+    "name": "Money",
+    "description": "Currency collected"
+  },
+  "location": {
+    "value": "Ancient Ruins",
+    "type": "string",
+    "name": "Location",
+    "description": "Current location"
+  }
+}
+```
 
 ## Important
 - Respond ONLY with valid JSON, no markdown or extra text

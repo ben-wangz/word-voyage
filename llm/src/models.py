@@ -4,8 +4,11 @@ from pydantic import BaseModel
 
 class ContextField(BaseModel):
     value: Any
-    type: str  # 'number' | 'string' | 'object' | 'array'
+    type: str  # 'int' | 'double' | 'string' | 'boolean' | 'object' | 'array'
+    name: str
     description: Optional[str] = None
+    min: Optional[float] = None
+    max: Optional[float] = None
 
 
 class PreLogSummary(BaseModel):
@@ -31,7 +34,10 @@ class StructuredGenerationRequest(BaseModel):
 class ContextChange(BaseModel):
     value: Any
     type: str
+    name: str
     description: Optional[str] = None
+    min: Optional[float] = None
+    max: Optional[float] = None
 
 
 class ValidationResult(BaseModel):

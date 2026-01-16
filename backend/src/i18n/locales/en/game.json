@@ -3,12 +3,27 @@
     "eventDescription": "@file:./initialEvent.txt",
     "summary": "Game starts. Player awakens in a crashed spaceship.",
     "state": {
-      "health": "Health points",
-      "hunger": "Hunger level",
-      "thirst": "Thirst level",
-      "energy": "Energy level",
-      "location": "Current location"
-    },
-    "locationValue": "Crashed Spaceship"
+      "health": {
+        "name": "Health",
+        "description": "Character's health points, death at 0"
+      },
+      "hunger": {
+        "name": "Hunger",
+        "description": "Hunger level, affects health when too high"
+      },
+      "thirst": {
+        "name": "Thirst",
+        "description": "Thirst level, affects health when too high"
+      },
+      "energy": {
+        "name": "Energy",
+        "description": "Energy level, affects action capability"
+      },
+      "location": {
+        "name": "Location",
+        "value": "Crashed Spaceship",
+        "description": "Current location in the game world"
+      }
+    }
   }
 }

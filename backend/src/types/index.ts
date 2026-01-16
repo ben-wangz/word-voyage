@@ -7,8 +7,11 @@
  */
 export interface ContextField {
   value: any;
-  type: 'number' | 'string' | 'object' | 'array';
+  type: 'int' | 'double' | 'string' | 'boolean' | 'object' | 'array';
+  name: string;
   description?: string;
+  min?: number;
+  max?: number;
 }
 
 /**

@@ -1,17 +1,26 @@
 const API_BASE = '/api/game';
 
+export interface ContextField {
+  value: any;
+  type: 'int' | 'double' | 'string' | 'boolean' | 'object' | 'array';
+  name: string;
+  description?: string;
+  min?: number;
+  max?: number;
+}
+
 export interface Step {
   id: string;
   timestamp: number;
   userInput: string;
   inputType: 'action' | 'question';
   context: {
-    state: Record<string, any>;
+    state: Record<string, ContextField>;
     gameTime: number;
   };
   event: {
     description: string;
-    contextChanges: Record<string, any>;
+    contextChanges: Record<string, ContextField | null>;
   };
   preLogSummary: {
     summary: string;
@@ -71,6 +80,10 @@ class GameService {
       credentials: 'include',
       body: JSON.stringify({ input }),
     });
+
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+    console.log('Response statusText:', response.statusText);
 
     if (!response.ok) {
       this.handleError(response);
