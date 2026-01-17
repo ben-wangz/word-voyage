@@ -82,8 +82,6 @@ export function GamePage() {
     if (!context) return null;
 
     const stateEntries = Object.entries(context.state || {});
-    const gameTimeEntry = ['gameTime', `${Math.floor((context.gameTime || 0) / 3600)} hours`];
-    const allEntries = [...stateEntries, gameTimeEntry];
 
     const placeholderEntries = [
       ['─', '─'],
@@ -92,8 +90,8 @@ export function GamePage() {
       ['▪', '▪']
     ];
 
-    const totalSlots = Math.ceil(allEntries.length / 4) * 4;
-    const paddedEntries = [...allEntries];
+    const totalSlots = Math.ceil(stateEntries.length / 4) * 4;
+    const paddedEntries = [...stateEntries];
     let placeholderIndex = 0;
 
     while (paddedEntries.length < totalSlots) {
@@ -107,12 +105,46 @@ export function GamePage() {
         <div className="context-grid">
           {paddedEntries.map((entry, index) => {
             const [key, field] = entry;
-            const value = typeof field === 'object' ? field.value : field;
             const isPlaceholder = key === '─' || key === '•' || key === '◆' || key === '▪';
+
+            if (isPlaceholder) {
+              return (
+                <div key={`${key}-${index}`} className="context-item placeholder">
+                  <span className="context-key">{key}</span>
+                  <span className="context-value">{typeof field === 'object' ? field.value : field}</span>
+                </div>
+              );
+            }
+
+            const isRichField = typeof field === 'object' && field !== null && 'value' in field;
+            const value = isRichField ? field.value : field;
+            const fieldName = isRichField ? field.name : key;
+            const description = isRichField ? field.description : null;
+            const min = isRichField && field.min !== undefined && field.min !== null ? field.min : null;
+            const max = isRichField && field.max !== undefined && field.max !== null ? field.max : null;
+
+            const hasRange = min !== null && max !== null && typeof value === 'number';
+            const percentage = hasRange ? Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100)) : 0;
+
             return (
-              <div key={`${key}-${index}`} className={`context-item ${isPlaceholder ? 'placeholder' : ''}`}>
-                <span className="context-key">{key}</span>
-                <span className="context-value">{value}</span>
+              <div
+                key={`${key}-${index}`}
+                className="context-item"
+                title={description || undefined}
+              >
+                <span className="context-key">{fieldName}</span>
+                {hasRange ? (
+                  <div className="context-value-range">
+                    <span className="range-min">{min}</span>
+                    <div className="range-bar">
+                      <div className="range-fill" style={{ width: `${percentage}%` }}></div>
+                      <span className="range-value">{value}</span>
+                    </div>
+                    <span className="range-max">{max}</span>
+                  </div>
+                ) : (
+                  <span className="context-value">{value}</span>
+                )}
               </div>
             );
           })}
@@ -143,7 +175,7 @@ export function GamePage() {
       <main className="game-main">
         <div className="left-panel">
           {renderContextGrid()}
-          <EventDisplay event={currentStep?.event} isLoading={loading} />
+          <EventDisplay event={currentStep?.event} isLoading={loading} gameTime={context?.gameTime} />
           <InputForm onSubmit={handleSubmitInput} disabled={loading} />
         </div>
 
