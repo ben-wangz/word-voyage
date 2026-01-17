@@ -150,7 +150,7 @@ echo "Exporting image to $TEMP_TAR..."
 $CONTAINER_RUNTIME save -o "$TEMP_TAR" "$TARGET_TAG"
 
 echo "Importing to k3s containerd..."
-k3s ctr images import "$TEMP_TAR"
+k3s ctr images import --all-platforms --no-unpack "$TEMP_TAR"
 
 echo "Detecting imported image name..."
 K3S_IMAGE_TAG=$(detect_k3s_image_name "$TARGET_TAG")
