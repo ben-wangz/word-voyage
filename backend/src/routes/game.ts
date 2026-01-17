@@ -93,6 +93,9 @@ gameRouter.post('/start', async (c) => {
       return c.json({ error: { code: 'SESSION_NOT_FOUND', message: t('common:errors.sessionNotFound', 'Session not found') } }, 404);
     }
 
+    // Clear previous game history when starting a new game
+    await sessionService.clearStepHistory(sessionId);
+
     const initialContext = createInitialContext(t);
 
     const initialStep: Step = {
@@ -211,12 +214,12 @@ gameRouter.post('/step', async (c) => {
 });
 
 /**
- * GET /api/game/context/:sessionId - Get current context
+ * GET /api/game/context - Get current context
  */
-gameRouter.get('/context/:sessionId', async (c) => {
+gameRouter.get('/context', async (c) => {
   try {
     const t = c.get('t') as I18nContext['t'];
-    const sessionId = c.req.param('sessionId');
+    const sessionId = c.get('sessionId') as string;
     const userId = c.get('userId') as string;
 
     const sessionService = getSession();
@@ -249,12 +252,12 @@ gameRouter.get('/context/:sessionId', async (c) => {
 });
 
 /**
- * GET /api/game/history/:sessionId - Get step history
+ * GET /api/game/history - Get step history
  */
-gameRouter.get('/history/:sessionId', async (c) => {
+gameRouter.get('/history', async (c) => {
   try {
     const t = c.get('t') as I18nContext['t'];
-    const sessionId = c.req.param('sessionId');
+    const sessionId = c.get('sessionId') as string;
     const userId = c.get('userId') as string;
 
     const sessionService = getSession();

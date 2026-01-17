@@ -68,6 +68,19 @@ export class SessionService {
     return [...session.stepHistory];
   }
 
+  async clearStepHistory(sessionId: string): Promise<void> {
+    const session = await this.getSession(sessionId);
+    if (!session) {
+      throw new Error(`Session not found: ${sessionId}`);
+    }
+
+    session.stepHistory = [];
+    session.currentStepId = undefined;
+    session.lastAccessedAt = Date.now();
+
+    await this.storage.set(`session:${sessionId}`, JSON.stringify(session), config.ttl.session);
+  }
+
   async rollbackToStep(sessionId: string, stepIndex: number): Promise<string[]> {
     const session = await this.getSession(sessionId);
     if (!session) {

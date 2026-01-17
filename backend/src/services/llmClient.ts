@@ -1,5 +1,6 @@
 import { config } from '../config.ts';
 import { LLMGenerationRequest, LLMGenerationResponse, SchemaField, Context } from '../types/index.ts';
+import { logger } from '../utils/logger.ts';
 
 /**
  * LLM Client Service
@@ -19,9 +20,15 @@ export class LLMClient {
    */
   async generateStructured(request: LLMGenerationRequest): Promise<LLMGenerationResponse> {
     try {
-      console.log(`[LLMClient] Sending request to ${this.serviceUrl}/generate_structured`);
-      console.log(`[LLMClient] Request context fields: ${Object.keys(request.context).length}`);
-      console.log(`[LLMClient] Request user_input: ${request.user_input}`);
+      logger.info(`[LLMClient] Sending request to ${this.serviceUrl}/generate_structured`);
+      logger.debug(`[LLMClient] Request details:`, {
+        contextFields: Object.keys(request.context),
+        contextFieldCount: Object.keys(request.context).length,
+        userInput: request.user_input,
+        hasPreLogSummary: !!request.pre_log_summary,
+        schemaKeys: Object.keys(request.schema),
+      });
+      logger.debug(`[LLMClient] Full request payload:`, JSON.stringify(request, null, 2));
 
       const response = await fetch(`${this.serviceUrl}/generate_structured`, {
         method: 'POST',
@@ -32,34 +39,38 @@ export class LLMClient {
         signal: AbortSignal.timeout(this.timeout),
       });
 
-      console.log(`[LLMClient] Response status: ${response.status}`);
+      logger.info(`[LLMClient] Response status: ${response.status}`);
 
       if (!response.ok) {
         const responseText = await response.text();
-        console.error(`[LLMClient] Error response body: ${responseText}`);
+        logger.error(`[LLMClient] Error response body: ${responseText}`);
         throw new Error(`LLM service returned ${response.status}: ${response.statusText}`);
       }
 
       const responseText = await response.text();
-      console.log(`[LLMClient] Raw response: ${responseText.substring(0, 500)}`);
+      logger.debug(`[LLMClient] Raw response (first 500 chars): ${responseText.substring(0, 500)}`);
+      logger.debug(`[LLMClient] Full raw response:`, responseText);
 
       let data: LLMGenerationResponse;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
-        console.error(`[LLMClient] Failed to parse JSON response: ${parseError}`);
-        console.error(`[LLMClient] Response text: ${responseText}`);
+        logger.error(`[LLMClient] Failed to parse JSON response: ${parseError}`);
+        logger.error(`[LLMClient] Response text: ${responseText}`);
         throw parseError;
       }
 
-      console.log(`[LLMClient] Response success: ${data.success}`);
+      logger.info(`[LLMClient] Response success: ${data.success}`);
       if (!data.success) {
-        console.error(`[LLMClient] LLM error: ${data.error_code} - ${data.message}`);
+        logger.error(`[LLMClient] LLM error: ${data.error_code} - ${data.message}`);
+      } else {
+        logger.debug(`[LLMClient] Response result:`, JSON.stringify(data.result, null, 2));
       }
 
       return data;
     } catch (error) {
       if (error instanceof Error) {
+        logger.error(`[LLMClient] LLM service call failed: ${error.message}`);
         throw new Error(`LLM service call failed: ${error.message}`);
       }
       throw error;
@@ -125,7 +136,7 @@ export class LLMClient {
       },
       context_changes: {
         type: 'object',
-        description: 'Object containing only the context fields that changed. Each field should have {value, type, description}. Use null to remove a field.',
+        description: 'Object containing only the context fields that changed. Each field MUST have {value, type, name, description}. Optional: min, max for numeric bounds. Use null to remove a field.',
       },
     };
   }

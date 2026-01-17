@@ -34,13 +34,35 @@ export function GamePage() {
     try {
       setLoading(true);
       setError(null);
+
+      const savedSessionId = gameService.getSavedSessionId();
+
+      if (savedSessionId) {
+        console.log('Found saved session, attempting to resume...');
+        const resumeData = await gameService.resumeGame();
+
+        if (resumeData && resumeData.history.length > 0) {
+          console.log('Successfully resumed game');
+          setHistory(resumeData.history);
+          setCurrentStep(resumeData.history[resumeData.history.length - 1]);
+          setContext(resumeData.context);
+          return;
+        } else {
+          console.log('Resume failed, clearing saved session');
+          gameService.clearSessionId();
+        }
+      }
+
+      console.log('Starting new game...');
       const response = await gameService.startGame(i18n.language);
+      gameService.saveSessionId(response.sessionId);
       setCurrentStep(response.step);
       setContext(response.step.context);
       setHistory([response.step]);
     } catch (err) {
       handleError(err);
       console.error('Failed to initialize game:', err);
+      gameService.clearSessionId();
     } finally {
       setLoading(false);
     }
@@ -51,6 +73,7 @@ export function GamePage() {
       setLoading(true);
       setError(null);
       const response = await gameService.processStep(input, i18n.language);
+      gameService.saveSessionId(response.sessionId);
       setCurrentStep(response.step);
       setContext(response.step.context);
       setHistory((prev) => [...prev, response.step]);
@@ -67,6 +90,7 @@ export function GamePage() {
       setLoading(true);
       setError(null);
       const response = await gameService.rollback(stepIndex, i18n.language);
+      gameService.saveSessionId(response.sessionId);
       setCurrentStep(response.step);
       setContext(response.step.context);
       setHistory((prev) => prev.slice(0, stepIndex + 1));

@@ -2,6 +2,7 @@ import { BaseNode, PluginNodeMetadata } from '../core/pluginNode.ts';
 import { Context, Event, ContextField } from '../types/index.ts';
 import { llmClient } from '../services/llmClient.ts';
 import { getI18n } from '../i18n/index.ts';
+import { logger } from '../utils/logger.ts';
 
 /**
  * LLM Core Node
@@ -16,7 +17,8 @@ export class LLMCoreNode extends BaseNode {
 
   async process(request: unknown, context: Context, next: () => Promise<unknown>): Promise<unknown> {
     const req = request as any;
-    console.log(`[LLMCoreNode] Generating event for input: ${req.userInput}`);
+    logger.info(`[LLMCoreNode] Generating event for input: ${req.userInput}`);
+    logger.debug(`[LLMCoreNode] Input type: ${req.inputType}, Language: ${req.language || 'en'}`);
 
     try {
       const language = req.language || 'en';
@@ -28,7 +30,9 @@ export class LLMCoreNode extends BaseNode {
         language
       );
 
-      console.log(`[LLMCoreNode] Event generated: ${event.description}`);
+      logger.info(`[LLMCoreNode] Event generated successfully`);
+      logger.debug(`[LLMCoreNode] Event description: ${event.description.substring(0, 100)}...`);
+      logger.debug(`[LLMCoreNode] Context changes keys: ${Object.keys(event.contextChanges).join(', ')}`);
 
       // Apply context changes
       this.applyContextChanges(context, event.contextChanges);
@@ -38,7 +42,7 @@ export class LLMCoreNode extends BaseNode {
 
       return next();
     } catch (error) {
-      console.error(`[LLMCoreNode] LLM generation failed:`, error);
+      logger.error(`[LLMCoreNode] LLM generation failed:`, error);
       throw new Error(`Failed to generate event: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -100,6 +104,14 @@ export class LLMCoreNode extends BaseNode {
         if (value === null) {
           contextChanges[key] = null;
         } else if (typeof value === 'object' && 'value' in value) {
+          // Validate required fields
+          const field = value as any;
+          if (!('type' in field)) {
+            throw new Error(`LLM response: field "${key}" missing required property "type"`);
+          }
+          if (!('name' in field)) {
+            throw new Error(`LLM response: field "${key}" missing required property "name"`);
+          }
           contextChanges[key] = value as ContextField;
         }
       }
@@ -119,11 +131,11 @@ export class LLMCoreNode extends BaseNode {
       if (value === null) {
         // Delete field
         delete context.state[key];
-        console.log(`[LLMCoreNode] Removed field: ${key}`);
+        logger.debug(`[LLMCoreNode] Removed field: ${key}`);
       } else {
         // Update or create field
         context.state[key] = value;
-        console.log(`[LLMCoreNode] Updated field: ${key} = ${value.value}`);
+        logger.debug(`[LLMCoreNode] Updated field: ${key} = ${JSON.stringify(value.value)}`);
       }
     }
   }

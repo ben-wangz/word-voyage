@@ -35,6 +35,20 @@ export interface GameResponse {
 }
 
 class GameService {
+  private readonly SESSION_KEY = 'wordvoyage_session_id';
+
+  saveSessionId(sessionId: string): void {
+    localStorage.setItem(this.SESSION_KEY, sessionId);
+  }
+
+  getSavedSessionId(): string | null {
+    return localStorage.getItem(this.SESSION_KEY);
+  }
+
+  clearSessionId(): void {
+    localStorage.removeItem(this.SESSION_KEY);
+  }
+
   private handleError(response: Response): never {
     if (response.status === 401) {
       throw new Error('SESSION_EXPIRED');
@@ -80,10 +94,6 @@ class GameService {
       credentials: 'include',
       body: JSON.stringify({ input }),
     });
-
-    console.log('Response status:', response.status);
-    console.log('Response ok:', response.ok);
-    console.log('Response statusText:', response.statusText);
 
     if (!response.ok) {
       this.handleError(response);
@@ -138,6 +148,27 @@ class GameService {
     }
 
     return response.json();
+  }
+
+  async resumeGame(): Promise<{ context: any; history: Step[] } | null> {
+    try {
+      const [contextData, historyData] = await Promise.all([
+        this.getContext(),
+        this.getHistory(),
+      ]);
+
+      if (!contextData || !historyData || !historyData.steps || historyData.steps.length === 0) {
+        return null;
+      }
+
+      return {
+        context: contextData,
+        history: historyData.steps,
+      };
+    } catch (error) {
+      console.error('Failed to resume game:', error);
+      return null;
+    }
   }
 }
 
