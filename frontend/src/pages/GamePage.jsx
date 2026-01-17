@@ -80,6 +80,7 @@ export function GamePage() {
     } catch (err) {
       handleError(err);
       console.error('Failed to process step:', err);
+      throw err;
     } finally {
       setLoading(false);
     }

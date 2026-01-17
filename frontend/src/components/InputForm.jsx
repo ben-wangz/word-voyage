@@ -5,11 +5,15 @@ export function InputForm({ onSubmit, disabled }) {
   const { t } = useTranslation();
   const [input, setInput] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (input.trim() && !disabled) {
-      onSubmit(input);
-      setInput('');
+      try {
+        await onSubmit(input);
+        setInput('');
+      } catch (err) {
+        // Keep input on error
+      }
     }
   };
 
