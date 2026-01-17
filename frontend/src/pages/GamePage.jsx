@@ -126,6 +126,21 @@ export function GamePage() {
             const hasRange = min !== null && max !== null && typeof value === 'number';
             const percentage = hasRange ? Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100)) : 0;
 
+            const formatValue = (val) => {
+              if (val === null || val === undefined) return '';
+              if (typeof val === 'object') {
+                if (Array.isArray(val)) {
+                  return val.join(', ');
+                }
+                return Object.entries(val)
+                  .map(([k, v]) => `${k}: ${v}`)
+                  .join(', ');
+              }
+              return String(val);
+            };
+
+            const displayValue = formatValue(value);
+
             return (
               <div
                 key={`${key}-${index}`}
@@ -143,7 +158,7 @@ export function GamePage() {
                     <span className="range-max">{max}</span>
                   </div>
                 ) : (
-                  <span className="context-value">{value}</span>
+                  <span className="context-value">{displayValue}</span>
                 )}
               </div>
             );
