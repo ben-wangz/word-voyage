@@ -1,17 +1,10 @@
 import { BaseNode, PluginNodeMetadata } from '../core/pluginNode.ts';
-import { Context, Event, ContextField } from '../types/index.ts';
-import { llmClient } from '../services/llmClient.ts';
+import { Context, Event, ContextField, SchemaField } from '../types/index.ts';
+import { generateStructured } from '../services/llm/index.ts';
+import { estimateTokens } from '../services/llm/tokenEstimator.ts';
 import { getI18n } from '../i18n/index.ts';
 import { logger } from '../utils/logger.ts';
 import { config } from '../config.ts';
-
-/**
- * Estimate token count for given text
- * Simple estimation: characters ÷ 2
- */
-function estimateTokens(text: string): number {
-  return Math.ceil(text.length / 2);
-}
 
 /**
  * LLM Core Node
@@ -67,7 +60,7 @@ export class LLMCoreNode extends BaseNode {
     language: string
   ): Promise<Event> {
     // Validate user input token count
-    const estimatedTokens = estimateTokens(userInput);
+    const estimatedTokens = estimateTokens(userInput, config.llm.model);
     const tokenLimit = config.llm.userInputTokensLimit;
 
     if (estimatedTokens > tokenLimit) {
@@ -88,29 +81,35 @@ export class LLMCoreNode extends BaseNode {
       eventDescriptionGuidance,
     });
 
-    // Convert preLogSummary to snake_case for LLM service
+    // Build user-specific prompt instruction
+    const userPromptInstruction = this.buildUserPromptInstruction(inputType);
+    const fullPrompt = `${basePrompt}\n\n${userPromptInstruction}`;
+
+    // Define output schema for event generation
+    const schema = this.buildEventSchema();
+
+    // Convert preLogSummary format
     const preLogSummaryForService = preLogSummary
       ? {
           summary: preLogSummary.summary,
-          recent_events: preLogSummary.recentEvents,
+          recentEvents: preLogSummary.recentEvents,
+          generatedAt: Date.now(),
         }
       : undefined;
 
-    // Build LLM request
-    const llmRequest = llmClient.buildRequest(
-      basePrompt,
-      context,
+    // Call structured generator
+    const response = await generateStructured(
+      fullPrompt,
+      context.state,
+      schema,
+      preLogSummaryForService,
       userInput,
-      inputType,
-      preLogSummaryForService
+      config.llm.model
     );
-
-    // Call LLM service
-    const response = await llmClient.generateStructured(llmRequest);
 
     // Handle error responses
     if (!response.success) {
-      throw new Error(`LLM generation failed: ${response.message} (${response.error_code})`);
+      throw new Error(`LLM generation failed: ${response.message} (${response.errorCode})`);
     }
 
     // Parse result
@@ -147,6 +146,34 @@ export class LLMCoreNode extends BaseNode {
     return {
       description: event_description,
       contextChanges,
+    };
+  }
+
+  /**
+   * Build user-specific prompt instruction based on input type
+   */
+  private buildUserPromptInstruction(inputType: 'action' | 'question'): string {
+    if (inputType === 'action') {
+      return `Generate an event describing what happens in the game world as a result of the player's action. Update only the context fields that change.`;
+    } else {
+      // 'question' type - mechanism questioning
+      return `Understand the player's feedback about game mechanics and generate an event that reflects the adjustment to the game world. Update context fields according to the player's suggestions.`;
+    }
+  }
+
+  /**
+   * Build schema definition for event generation output
+   */
+  private buildEventSchema(): { [key: string]: SchemaField } {
+    return {
+      event_description: {
+        type: 'string',
+        description: 'Narrative description of what happens in the game world. Should be 3-5 sentences, vivid and immersive, directly responding to the player action.',
+      },
+      context_changes: {
+        type: 'object',
+        description: 'Object containing only the context fields that changed. Each field MUST have {value, type, name, description}. Optional: min, max for numeric bounds. Use null to remove a field.',
+      },
     };
   }
 
