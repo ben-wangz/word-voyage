@@ -209,7 +209,58 @@ gameRouter.post('/step', async (c) => {
   } catch (error: any) {
     console.error('Error processing step:', error);
     const t = c.get('t') as I18nContext['t'];
-    return c.json({ error: { code: 'INTERNAL_ERROR', message: t('common:errors.internalError', error.message) } }, 500);
+
+    // Detect timeout errors
+    if (error.message?.includes('timed out') || error.message?.includes('timeout')) {
+      return c.json(
+        {
+          error: {
+            code: 'LLM_TIMEOUT',
+            message: t('common:errors.llmTimeout', 'Request timed out. The AI service took too long to respond. Please try again.'),
+          },
+        },
+        504
+      );
+    }
+
+    // Detect user input too long errors
+    if (error.message?.includes('User input is too long') || error.message?.includes('too long')) {
+      return c.json(
+        {
+          error: {
+            code: 'INPUT_TOO_LONG',
+            message: error.message,
+          },
+        },
+        400
+      );
+    }
+
+    // Detect LLM service errors
+    if (error.message?.includes('LLM') || error.message?.includes('generation failed')) {
+      return c.json(
+        {
+          error: {
+            code: 'LLM_ERROR',
+            message: t('common:errors.llmError', 'AI service error. Please try again later.'),
+            details: error.message,
+          },
+        },
+        503
+      );
+    }
+
+    // Generic internal error
+    return c.json(
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: t('common:errors.internalError', 'An unexpected error occurred'),
+          details: error.message,
+        },
+      },
+      500
+    );
   }
 });
 

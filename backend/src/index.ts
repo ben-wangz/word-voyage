@@ -15,6 +15,7 @@ import { sessionRefreshMiddleware } from './middleware/sessionRefresh.ts';
 import gameRouter from './routes/game.ts';
 import authRouter from './routes/auth.ts';
 import healthRouter from './routes/health.ts';
+import configRouter from './routes/config.ts';
 
 const app = new Hono();
 
@@ -30,6 +31,7 @@ app.use('*', sessionRefreshMiddleware());
 app.route('/api/auth', authRouter);
 app.route('/api/game', gameRouter);
 app.route('/api/health', healthRouter);
+app.route('/api/config', configRouter);
 
 // Root endpoint
 app.get('/', (c) => {
@@ -40,6 +42,7 @@ app.get('/', (c) => {
       auth: '/api/auth',
       game: '/api/game',
       health: '/api/health',
+      config: '/api/config',
     },
   });
 });

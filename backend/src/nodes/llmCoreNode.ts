@@ -3,6 +3,15 @@ import { Context, Event, ContextField } from '../types/index.ts';
 import { llmClient } from '../services/llmClient.ts';
 import { getI18n } from '../i18n/index.ts';
 import { logger } from '../utils/logger.ts';
+import { config } from '../config.ts';
+
+/**
+ * Estimate token count for given text
+ * Simple estimation: characters ÷ 2
+ */
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 2);
+}
 
 /**
  * LLM Core Node
@@ -57,9 +66,27 @@ export class LLMCoreNode extends BaseNode {
     preLogSummary: { summary: string; recentEvents: string[] } | undefined,
     language: string
   ): Promise<Event> {
-    // Get prompt template for current language
+    // Validate user input token count
+    const estimatedTokens = estimateTokens(userInput);
+    const tokenLimit = config.llm.userInputTokensLimit;
+
+    if (estimatedTokens > tokenLimit) {
+      const charLimit = config.userInputLimits[language as 'en' | 'zh']?.chars || config.userInputLimits.en.chars;
+      logger.error(`[LLMCoreNode] User input exceeds token limit: ${estimatedTokens} > ${tokenLimit}`);
+      throw new Error(
+        `User input is too long. Estimated ${estimatedTokens} tokens, limit is ${tokenLimit} tokens (approximately ${charLimit} characters for ${language}). Please shorten your input.`
+      );
+    }
+
+    logger.debug(`[LLMCoreNode] User input token estimation: ${estimatedTokens} / ${tokenLimit}`);
+
+    // Get prompt template for current language with interpolation
     const i18n = getI18n();
-    const basePrompt = i18n.t('prompts:llmCore.system', { lng: language });
+    const eventDescriptionGuidance = config.eventDescriptionGuidance[language as 'en' | 'zh']?.description || config.eventDescriptionGuidance.en.description;
+    const basePrompt = i18n.t('prompts:llmCore.system', {
+      lng: language,
+      eventDescriptionGuidance,
+    });
 
     // Convert preLogSummary to snake_case for LLM service
     const preLogSummaryForService = preLogSummary

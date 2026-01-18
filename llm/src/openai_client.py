@@ -8,6 +8,46 @@ from .config import OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL, LLM_MAX_TOKEN
 logger = logging.getLogger(__name__)
 
 
+def estimate_tokens(text: str, model: str = "gpt-4") -> int:
+    """
+    Estimate token count for given text
+
+    Args:
+        text: Text to estimate tokens for
+        model: Model name for tokenizer (default: gpt-4)
+
+    Returns:
+        Estimated token count
+    """
+    try:
+        import tiktoken
+
+        # Map common model names to tiktoken encodings
+        # Qwen models typically use cl100k_base encoding (same as GPT-4)
+        encoding_map = {
+            "gpt-4": "cl100k_base",
+            "gpt-4o": "o200k_base",
+            "gpt-3.5-turbo": "cl100k_base",
+            "qwen": "cl100k_base",  # Qwen uses similar tokenization
+        }
+
+        # Determine encoding based on model name
+        encoding_name = "cl100k_base"  # default
+        for model_prefix, enc in encoding_map.items():
+            if model_prefix in model.lower():
+                encoding_name = enc
+                break
+
+        encoding = tiktoken.get_encoding(encoding_name)
+        return len(encoding.encode(text))
+    except Exception as e:
+        logger.warning(f"Failed to estimate tokens with tiktoken: {e}, using fallback")
+        # Fallback: rough estimation
+        # Chinese: ~1.5 chars/token, English: ~4 chars/token
+        # Use conservative estimate of 2 chars/token for mixed content
+        return len(text) // 2
+
+
 def build_system_prompt(schema: Dict[str, Any]) -> str:
     """Build system prompt with schema requirements"""
     schema_description = "You must respond with ONLY valid JSON that follows this exact schema:\n"
@@ -93,8 +133,14 @@ def generate_structured(
     system_prompt = build_system_prompt(schema)
     user_prompt = build_user_prompt(prompt, context, pre_log_summary, user_input)
 
+    # Estimate token counts
+    system_tokens = estimate_tokens(system_prompt, model)
+    user_tokens = estimate_tokens(user_prompt, model)
+    total_input_tokens = system_tokens + user_tokens
+
     logger.debug(f"System prompt: {system_prompt}")
     logger.debug(f"User prompt: {user_prompt}")
+    logger.debug(f"Token estimation - System: {system_tokens}, User: {user_tokens}, Total input: {total_input_tokens}, Max output: {LLM_MAX_TOKENS}")
     logger.info(f"Calling OpenAI with model={model}, max_tokens={LLM_MAX_TOKENS}")
 
     messages = [

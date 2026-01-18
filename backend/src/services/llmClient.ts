@@ -48,7 +48,6 @@ export class LLMClient {
       }
 
       const responseText = await response.text();
-      logger.debug(`[LLMClient] Raw response (first 500 chars): ${responseText.substring(0, 500)}`);
       logger.debug(`[LLMClient] Full raw response:`, responseText);
 
       let data: LLMGenerationResponse;

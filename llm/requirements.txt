@@ -1,5 +1,6 @@
 # OpenAI client
 openai>=1.0.0
+tiktoken>=0.5.0
 
 # FastAPI service
 fastapi>=0.104.0

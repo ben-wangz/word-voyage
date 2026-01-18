@@ -32,8 +32,10 @@ const rawConfig = {
   },
   llm: {
     serviceUrl: Bun.env.LLM_SERVICE_URL || 'http://host.containers.internal:8011',
-    timeout: parseInt(Bun.env.LLM_TIMEOUT || '30000', 10),
+    timeout: parseInt(Bun.env.LLM_TIMEOUT || '60000', 10),
     contextMaxFields: parseInt(Bun.env.CONTEXT_MAX_FIELDS || '16', 10),
+    userInputTokensLimit: parseInt(Bun.env.USER_INPUT_TOKENS_LIMIT || '300', 10),
+    eventDescriptionTokensLimit: parseInt(Bun.env.EVENT_DESCRIPTION_TOKENS_LIMIT || '500', 10),
   },
 };
 
@@ -59,4 +61,31 @@ function validateTTL(config: typeof rawConfig): void {
 
 validateTTL(rawConfig);
 
-export const config = rawConfig;
+// Calculate derived limits for user input and event description
+const userInputLimits = {
+  zh: {
+    chars: Math.floor(rawConfig.llm.userInputTokensLimit / 2), // tokens ÷ 2 for Chinese
+  },
+  en: {
+    chars: rawConfig.llm.userInputTokensLimit * 4, // tokens × 4 for English
+  },
+};
+
+const eventDescriptionGuidance = {
+  zh: {
+    tokens: rawConfig.llm.eventDescriptionTokensLimit,
+    chars: Math.floor(rawConfig.llm.eventDescriptionTokensLimit / 2),
+    description: `生成约 ${rawConfig.llm.eventDescriptionTokensLimit} tokens 的事件描述（约 ${Math.floor(rawConfig.llm.eventDescriptionTokensLimit / 2)} 个汉字）`,
+  },
+  en: {
+    tokens: rawConfig.llm.eventDescriptionTokensLimit,
+    chars: rawConfig.llm.eventDescriptionTokensLimit * 4,
+    description: `Generate event_description with approximately ${rawConfig.llm.eventDescriptionTokensLimit} tokens (~${Math.floor(rawConfig.llm.eventDescriptionTokensLimit / 4)} words or ~${rawConfig.llm.eventDescriptionTokensLimit * 4} characters)`,
+  },
+};
+
+export const config = {
+  ...rawConfig,
+  userInputLimits,
+  eventDescriptionGuidance,
+};

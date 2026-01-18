@@ -65,3 +65,6 @@ Each context field is an object with the following properties:
 - Respond ONLY with valid JSON, no markdown or extra text
 - Do not explain your reasoning, just generate the event and context changes
 - Focus on player agency: events should empower the player, not restrict them
+
+## Event Description Length Guidance
+{{eventDescriptionGuidance}}
