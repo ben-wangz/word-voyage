@@ -8,6 +8,8 @@ import { EventHistory } from '../components/EventHistory';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { UserStatusBar } from '../components/UserStatusBar';
 
+import { Popover } from '../components/Popover';
+
 export function GamePage() {
   const { t, i18n } = useTranslation();
   const [currentStep, setCurrentStep] = useState(null);
@@ -165,6 +167,7 @@ export function GamePage() {
             };
 
             const displayValue = formatValue(value);
+            const isLongValue = displayValue.length > 8;
 
             return (
               <div
@@ -182,6 +185,10 @@ export function GamePage() {
                     </div>
                     <span className="range-max">{max}</span>
                   </div>
+                ) : isLongValue ? (
+                  <Popover content={<div className="popover-content">{displayValue}</div>}>
+                    <span className="context-value-icon">📋</span>
+                  </Popover>
                 ) : (
                   <span className="context-value">{displayValue}</span>
                 )}
@@ -199,7 +206,10 @@ export function GamePage() {
       <header className="game-header">
         <div>
           <div>
-            <h1>{t('app.title')}</h1>
+            <h1>
+              <img src="/vite.svg" alt="WordVoyage Logo" className="title-logo" />
+              {t('app.title')}
+            </h1>
             <p>{t('app.subtitle')}</p>
           </div>
           <LanguageSwitcher />

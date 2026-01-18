@@ -43,7 +43,10 @@ export function HomePage() {
   return (
     <div className="home-page">
       <div className="home-header">
-        <h1 className="home-title">{t('app.title', 'Word Voyage')}</h1>
+        <h1 className="home-title">
+          <img src="/vite.svg" alt="WordVoyage Logo" className="title-logo" />
+          {t('app.title', 'Word Voyage')}
+        </h1>
         <LanguageSwitcher />
       </div>
 

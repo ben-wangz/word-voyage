@@ -17,6 +17,15 @@
   color: white;
   margin: 0;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.title-logo {
+  width: 2.5rem;
+  height: 2.5rem;
+  vertical-align: middle;
 }
 
 .home-content {

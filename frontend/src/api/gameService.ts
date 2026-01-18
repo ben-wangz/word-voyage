@@ -162,7 +162,7 @@ class GameService {
       }
 
       return {
-        context: contextData,
+        context: contextData.context,
         history: historyData.steps,
       };
     } catch (error) {
