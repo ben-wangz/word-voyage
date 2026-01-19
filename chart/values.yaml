@@ -1,47 +1,34 @@
 global:
-  imageRegistry: ""
+  imageRegistry: ''
   imagePullSecrets: []
-
 commonLabels: {}
 commonAnnotations: {}
-
-# Credentials
 credentials:
-  # Use existing secret (if set, the chart will not create a new secret)
-  existingSecret: ""
-  # JWT secret (only used when existingSecret is not set)
-  # If empty, a deterministic value will be generated based on release name and namespace
-  jwtSecret: ""
-  # OpenAI configuration (required, only used when existingSecret is not set)
+  existingSecret: ''
+  jwtSecret: ''
   openai:
-    baseUrl: "https://api.openai.com/v1"
-    apiKey: ""
-    model: "gpt-4o"
-
-# LLM Service
+    baseUrl: https://api.openai.com/v1
+    apiKey: ''
+    model: gpt-4o
 llm:
   replicas: 1
   revisionHistoryLimit: 10
   updateStrategy: {}
-  #  type: RollingUpdate
-  #  rollingUpdate:
-  #    maxSurge: 1
-  #    maxUnavailable: 0
   image:
     repository: wordvoyage-llm
-    tag: "1.0.0"
+    tag: 1.0.1
     pullPolicy: IfNotPresent
   port: 8011
   resources: {}
-  resourcesPreset: "none"
+  resourcesPreset: none
   nodeSelector: {}
   tolerations: []
   affinity: {}
-  podAffinityPreset: ""
+  podAffinityPreset: ''
   podAntiAffinityPreset: soft
   nodeAffinityPreset:
-    type: ""
-    key: ""
+    type: ''
+    key: ''
     values: []
   podLabels: {}
   podAnnotations: {}
@@ -65,9 +52,9 @@ llm:
       - ALL
     seccompProfile:
       type: RuntimeDefault
-  hostname: ""
+  hostname: ''
   extraEnvVars: []
-  extraEnvVarsSecret: ""
+  extraEnvVarsSecret: ''
   extraVolumeMounts: []
   extraVolumes: []
   customLivenessProbe: {}
@@ -80,41 +67,35 @@ llm:
   service:
     type: ClusterIP
     port: 8011
-    nodePort: ""
-    clusterIP: ""
+    nodePort: ''
+    clusterIP: ''
     externalTrafficPolicy: Cluster
-    sessionAffinity: ""
+    sessionAffinity: ''
     sessionAffinityConfig: {}
-    loadBalancerIP: ""
+    loadBalancerIP: ''
     loadBalancerSourceRanges: []
-    loadBalancerClass: ""
+    loadBalancerClass: ''
     annotations: {}
     extraPorts: []
-
-# Frontend Service
 frontend:
   replicas: 1
   revisionHistoryLimit: 10
   updateStrategy: {}
-  #  type: RollingUpdate
-  #  rollingUpdate:
-  #    maxSurge: 1
-  #    maxUnavailable: 0
   image:
     repository: wordvoyage-frontend
-    tag: "1.0.0"
+    tag: 1.0.1
     pullPolicy: IfNotPresent
   port: 3000
   resources: {}
-  resourcesPreset: "none"
+  resourcesPreset: none
   nodeSelector: {}
   tolerations: []
   affinity: {}
-  podAffinityPreset: ""
+  podAffinityPreset: ''
   podAntiAffinityPreset: soft
   nodeAffinityPreset:
-    type: ""
-    key: ""
+    type: ''
+    key: ''
     values: []
   podLabels: {}
   podAnnotations: {}
@@ -138,9 +119,9 @@ frontend:
       - ALL
     seccompProfile:
       type: RuntimeDefault
-  hostname: ""
+  hostname: ''
   extraEnvVars: []
-  extraEnvVarsSecret: ""
+  extraEnvVarsSecret: ''
   extraVolumeMounts: []
   extraVolumes: []
   customLivenessProbe: {}
@@ -153,41 +134,35 @@ frontend:
   service:
     type: ClusterIP
     port: 3000
-    nodePort: ""
-    clusterIP: ""
+    nodePort: ''
+    clusterIP: ''
     externalTrafficPolicy: Cluster
-    sessionAffinity: ""
+    sessionAffinity: ''
     sessionAffinityConfig: {}
-    loadBalancerIP: ""
+    loadBalancerIP: ''
     loadBalancerSourceRanges: []
-    loadBalancerClass: ""
+    loadBalancerClass: ''
     annotations: {}
     extraPorts: []
-
-# Backend Service
 backend:
   replicas: 1
   revisionHistoryLimit: 10
   updateStrategy: {}
-  #  type: RollingUpdate
-  #  rollingUpdate:
-  #    maxSurge: 1
-  #    maxUnavailable: 0
   image:
     repository: wordvoyage-backend
-    tag: "1.0.0"
+    tag: 1.0.1
     pullPolicy: IfNotPresent
   port: 8080
   resources: {}
-  resourcesPreset: "none"
+  resourcesPreset: none
   nodeSelector: {}
   tolerations: []
   affinity: {}
-  podAffinityPreset: ""
+  podAffinityPreset: ''
   podAntiAffinityPreset: soft
   nodeAffinityPreset:
-    type: ""
-    key: ""
+    type: ''
+    key: ''
     values: []
   podLabels: {}
   podAnnotations: {}
@@ -211,11 +186,11 @@ backend:
       - ALL
     seccompProfile:
       type: RuntimeDefault
-  hostname: ""
+  hostname: ''
   extraEnvVars:
-    - name: LLM_MAX_TOKENS
-      value: "3000"
-  extraEnvVarsSecret: ""
+  - name: LLM_MAX_TOKENS
+    value: '3000'
+  extraEnvVarsSecret: ''
   extraVolumeMounts: []
   extraVolumes: []
   customLivenessProbe: {}
@@ -228,18 +203,16 @@ backend:
   service:
     type: ClusterIP
     port: 8080
-    nodePort: ""
-    clusterIP: ""
+    nodePort: ''
+    clusterIP: ''
     externalTrafficPolicy: Cluster
-    sessionAffinity: ""
+    sessionAffinity: ''
     sessionAffinityConfig: {}
-    loadBalancerIP: ""
+    loadBalancerIP: ''
     loadBalancerSourceRanges: []
-    loadBalancerClass: ""
+    loadBalancerClass: ''
     annotations: {}
     extraPorts: []
-
-# Redis configuration (bitnami/redis subchart)
 redis:
   enabled: true
   architecture: standalone
@@ -249,52 +222,19 @@ redis:
     service:
       ports:
         redis: 6379
-  # External Redis (when redis.enabled=false)
   external:
-    host: ""
+    host: ''
     port: 6379
-
-# Ingress configuration
 ingress:
   enabled: false
-  ingressClassName: ""
+  ingressClassName: ''
   hostname: word-voyage.local
   path: /
   pathType: Prefix
   annotations: {}
   tls: false
-  tlsSecret: ""
+  tlsSecret: ''
   extraHosts: []
-  # - host: word-voyage-extra.local
-  #   http:
-  #     paths:
-  #       - path: /
-  #         pathType: Prefix
-  #         backend:
-  #           service:
-  #             name: word-voyage-frontend
-  #             port:
-  #               number: 8080
   extraPaths: []
-  # - path: /api
-  #   pathType: Prefix
-  #   backend:
-  #     service:
-  #       name: word-voyage-backend
-  #       port:
-  #         number: 8000
   extraTls: []
-  # - hosts:
-  #     - word-voyage-extra.local
-  #   secretName: word-voyage-extra-tls
   extraRules: []
-  # - host: word-voyage-custom.local
-  #   http:
-  #     paths:
-  #       - path: /custom
-  #         pathType: Prefix
-  #         backend:
-  #           service:
-  #             name: custom-service
-  #             port:
-  #               number: 9000
