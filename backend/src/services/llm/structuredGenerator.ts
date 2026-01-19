@@ -52,7 +52,7 @@ export async function generateStructured(
     const userPrompt = buildUserPrompt(prompt, context, preLogSummary, userInput);
 
     // Estimate token counts
-    const modelName = model || config.llm.model;
+    const modelName = model || config.openai.model;
     const systemTokens = estimateTokens(systemPrompt, modelName);
     const userTokens = estimateTokens(userPrompt, modelName);
     const totalInputTokens = systemTokens + userTokens;
@@ -73,6 +73,8 @@ export async function generateStructured(
         ],
         model: modelName,
         max_tokens: config.llm.maxTokens,
+        base_url: config.openai.baseUrl,
+        api_key: config.openai.apiKey,
         response_format: { type: 'json_object' },
       });
 

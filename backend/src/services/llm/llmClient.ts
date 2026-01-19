@@ -14,8 +14,10 @@ export type LLMMessage = {
  */
 export type LLMCompletionRequest = {
   messages: LLMMessage[];
-  model?: string;
-  max_tokens?: number;
+  model: string;
+  max_tokens: number;
+  base_url: string;
+  api_key: string;
   response_format?: { type: 'json_object' | 'text' };
 };
 

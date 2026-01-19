@@ -1,19 +1,20 @@
 # OpenAI Proxy
 from typing import List, Dict, Any, Optional
-from openai import OpenAI
-from .config import OPENAI_BASE_URL, OPENAI_API_KEY
+from .client_pool import client_pool
 
 
 def complete(
     messages: List[Dict[str, str]],
     model: str,
     max_tokens: int,
+    base_url: str,
+    api_key: str,
     response_format: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """
     Complete using OpenAI API (non-streaming)
     """
-    client = OpenAI(base_url=OPENAI_BASE_URL, api_key=OPENAI_API_KEY)
+    client = client_pool.get_client(base_url, api_key)
 
     completion = client.chat.completions.create(
         model=model,
@@ -40,12 +41,14 @@ def complete_stream(
     messages: List[Dict[str, str]],
     model: str,
     max_tokens: int,
+    base_url: str,
+    api_key: str,
     response_format: Optional[Dict[str, str]] = None
 ):
     """
     Complete using OpenAI API (streaming)
     """
-    client = OpenAI(base_url=OPENAI_BASE_URL, api_key=OPENAI_API_KEY)
+    client = client_pool.get_client(base_url, api_key)
 
     return client.chat.completions.create(
         model=model,

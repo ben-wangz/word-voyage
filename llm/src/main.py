@@ -28,6 +28,8 @@ class CompletionRequest(BaseModel):
     messages: List[Message]
     model: str
     max_tokens: int
+    base_url: str
+    api_key: str
     response_format: Optional[Dict[str, str]] = None
 
 
@@ -46,6 +48,8 @@ async def complete_endpoint(request: CompletionRequest):
             messages=messages,
             model=request.model,
             max_tokens=request.max_tokens,
+            base_url=request.base_url,
+            api_key=request.api_key,
             response_format=request.response_format
         )
 
@@ -70,6 +74,8 @@ async def complete_stream_endpoint(request: CompletionRequest):
                     messages=messages,
                     model=request.model,
                     max_tokens=request.max_tokens,
+                    base_url=request.base_url,
+                    api_key=request.api_key,
                     response_format=request.response_format
                 )
 

@@ -33,11 +33,15 @@ const rawConfig = {
   llm: {
     serviceUrl: Bun.env.LLM_SERVICE_URL || 'http://host.containers.internal:8011',
     timeout: parseInt(Bun.env.LLM_TIMEOUT || '60000', 10),
-    model: Bun.env.LLM_MODEL || 'gpt-4o',
     maxTokens: parseInt(Bun.env.LLM_MAX_TOKENS || '3000', 10),
     contextMaxFields: parseInt(Bun.env.CONTEXT_MAX_FIELDS || '16', 10),
     userInputTokensLimit: parseInt(Bun.env.USER_INPUT_TOKENS_LIMIT || '300', 10),
     eventDescriptionTokensLimit: parseInt(Bun.env.EVENT_DESCRIPTION_TOKENS_LIMIT || '500', 10),
+  },
+  openai: {
+    baseUrl: Bun.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+    apiKey: Bun.env.OPENAI_API_KEY || '',
+    model: Bun.env.OPENAI_API_MODEL || 'gpt-4o',
   },
 };
 
