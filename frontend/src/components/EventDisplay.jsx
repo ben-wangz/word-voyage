@@ -15,7 +15,7 @@ export function EventDisplay({ event, isLoading, gameTime }) {
         <p>{t('event.waiting')}</p>
         {gameTime !== undefined && (
           <div className="game-time">
-            <span className="game-time-label">{t('game.time', 'Game Time')}:</span>
+            <span className="game-time-label">{t('context.gameTime')}</span>
             <span className="game-time-value">{formatGameTime(gameTime)}</span>
           </div>
         )}
@@ -27,7 +27,7 @@ export function EventDisplay({ event, isLoading, gameTime }) {
     <div className="event-display">
       {gameTime !== undefined && (
         <div className="game-time">
-          <span className="game-time-label">{t('game.time', 'Game Time')}:</span>
+          <span className="game-time-label">{t('context.gameTime')}:</span>
           <span className="game-time-value">{formatGameTime(gameTime)}</span>
         </div>
       )}
