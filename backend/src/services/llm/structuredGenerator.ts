@@ -1,6 +1,6 @@
 import { SchemaField, ContextField, PreLogSummary } from '../../types/index.ts';
 import { llmClient } from './llmClient.ts';
-import { buildSystemPrompt, buildUserPrompt } from './promptBuilder.ts';
+import { buildUserPrompt } from './promptBuilder.ts';
 import { extractAndParseJson } from './jsonExtractor.ts';
 import { validateSchema, generateFixSuggestion } from '../validation/index.ts';
 import type { ValidationError } from '../validation/index.ts';
@@ -24,7 +24,7 @@ export type StructuredGenerationResult = {
  * Generate structured data using LLM
  */
 export async function generateStructured(
-  prompt: string,
+  systemPrompt: string,
   context: { [key: string]: ContextField },
   schema: { [key: string]: SchemaField },
   preLogSummary?: PreLogSummary,
@@ -47,9 +47,8 @@ export async function generateStructured(
       };
     }
 
-    // Build prompts
-    const systemPrompt = buildSystemPrompt(schema);
-    const userPrompt = buildUserPrompt(prompt, context, preLogSummary, userInput);
+    // Build user prompt with dynamic content only
+    const userPrompt = buildUserPrompt(context, preLogSummary, userInput);
 
     // Estimate token counts
     const modelName = model || config.openai.model;

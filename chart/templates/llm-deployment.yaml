@@ -59,27 +59,8 @@ spec:
             - name: http
               containerPort: {{ .Values.llm.port }}
               protocol: TCP
-          env:
-            - name: OPENAI_BASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "word-voyage.credentials.secretName" . }}
-                  key: openai-base-url
-            - name: OPENAI_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "word-voyage.credentials.secretName" . }}
-                  key: openai-api-key
-            - name: OPENAI_MODEL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "word-voyage.credentials.secretName" . }}
-                  key: openai-model
-            - name: CONTEXT_MAX_FIELDS
-              value: {{ .Values.llm.contextMaxFields | quote }}
-            - name: LLM_MAX_TOKENS
-              value: {{ .Values.llm.maxTokens | quote }}
           {{- if .Values.llm.extraEnvVars }}
+          env:
           {{- include "common.tplvalues.render" ( dict "value" .Values.llm.extraEnvVars "context" $ ) | nindent 12 }}
           {{- end }}
           {{- if .Values.llm.extraEnvVarsSecret }}

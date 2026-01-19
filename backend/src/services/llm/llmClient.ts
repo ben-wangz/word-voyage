@@ -53,6 +53,7 @@ export class LLMClient {
         model: request.model,
         maxTokens: request.max_tokens,
       });
+      logger.debug(`[LLMClient] Full raw request:`, JSON.stringify(request, null, 2));
 
       const response = await fetch(`${this.serviceUrl}/complete`, {
         method: 'POST',

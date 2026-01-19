@@ -49,13 +49,23 @@ class GameService {
     localStorage.removeItem(this.SESSION_KEY);
   }
 
-  private handleError(response: Response): never {
+  private async handleError(response: Response): Promise<never> {
     if (response.status === 401) {
       throw new Error('SESSION_EXPIRED');
     }
     if (response.status === 403) {
       throw new Error('ACCESS_DENIED');
     }
+
+    try {
+      const errorData = await response.json();
+      if (errorData.error?.message) {
+        throw new Error(errorData.error.message);
+      }
+    } catch (e) {
+      // If JSON parsing fails, fall back to statusText
+    }
+
     throw new Error(`Request failed: ${response.statusText}`);
   }
 
@@ -74,7 +84,7 @@ class GameService {
     });
 
     if (!response.ok) {
-      this.handleError(response);
+      await this.handleError(response);
     }
 
     return response.json();
@@ -96,7 +106,7 @@ class GameService {
     });
 
     if (!response.ok) {
-      this.handleError(response);
+      await this.handleError(response);
     }
 
     return response.json();
@@ -118,7 +128,7 @@ class GameService {
     });
 
     if (!response.ok) {
-      this.handleError(response);
+      await this.handleError(response);
     }
 
     return response.json();
@@ -131,7 +141,7 @@ class GameService {
     });
 
     if (!response.ok) {
-      this.handleError(response);
+      await this.handleError(response);
     }
 
     return response.json();
@@ -144,7 +154,7 @@ class GameService {
     });
 
     if (!response.ok) {
-      this.handleError(response);
+      await this.handleError(response);
     }
 
     return response.json();

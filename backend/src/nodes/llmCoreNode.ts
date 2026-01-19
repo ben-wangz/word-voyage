@@ -73,19 +73,17 @@ export class LLMCoreNode extends BaseNode {
 
     logger.debug(`[LLMCoreNode] User input token estimation: ${estimatedTokens} / ${tokenLimit}`);
 
-    // Get prompt template for current language with interpolation
+    // Get system prompt from i18n (llmCore.txt)
     const i18n = getI18n();
-    const eventDescriptionGuidance = config.eventDescriptionGuidance[language as 'en' | 'zh']?.description || config.eventDescriptionGuidance.en.description;
-    const basePrompt = i18n.t('prompts:llmCore.system', {
+    const guidance = config.eventDescriptionGuidance[language as 'en' | 'zh'] || config.eventDescriptionGuidance.en;
+    const systemPrompt = i18n.t('prompts:llmCore.system', {
       lng: language,
-      eventDescriptionGuidance,
+      eventDescriptionTokens: guidance.tokens,
+      eventDescriptionChars: guidance.chars,
+      eventDescriptionWords: 'words' in guidance ? guidance.words : undefined,
     });
 
-    // Build user-specific prompt instruction
-    const userPromptInstruction = this.buildUserPromptInstruction(inputType);
-    const fullPrompt = `${basePrompt}\n\n${userPromptInstruction}`;
-
-    // Define output schema for event generation
+    // Define output schema for validation
     const schema = this.buildEventSchema();
 
     // Convert preLogSummary format
@@ -97,9 +95,9 @@ export class LLMCoreNode extends BaseNode {
         }
       : undefined;
 
-    // Call structured generator
+    // Call structured generator with system prompt
     const response = await generateStructured(
-      fullPrompt,
+      systemPrompt,
       context.state,
       schema,
       preLogSummaryForService,
@@ -133,12 +131,16 @@ export class LLMCoreNode extends BaseNode {
           // Validate required fields
           const field = value as any;
           if (!('type' in field)) {
-            throw new Error(`LLM response: field "${key}" missing required property "type"`);
+            logger.error(`[LLMCoreNode] Field "${key}" missing "type" property. Received:`, JSON.stringify(field));
+            throw new Error(`LLM response: field "${key}" missing required property "type". Received: ${JSON.stringify(field)}`);
           }
           if (!('name' in field)) {
-            throw new Error(`LLM response: field "${key}" missing required property "name"`);
+            logger.error(`[LLMCoreNode] Field "${key}" missing "name" property. Received:`, JSON.stringify(field));
+            throw new Error(`LLM response: field "${key}" missing required property "name". Received: ${JSON.stringify(field)}`);
           }
           contextChanges[key] = value as ContextField;
+        } else {
+          logger.warn(`[LLMCoreNode] Field "${key}" has invalid structure, skipping. Received:`, JSON.stringify(value));
         }
       }
     }
@@ -147,18 +149,6 @@ export class LLMCoreNode extends BaseNode {
       description: event_description,
       contextChanges,
     };
-  }
-
-  /**
-   * Build user-specific prompt instruction based on input type
-   */
-  private buildUserPromptInstruction(inputType: 'action' | 'question'): string {
-    if (inputType === 'action') {
-      return `Generate an event describing what happens in the game world as a result of the player's action. Update only the context fields that change.`;
-    } else {
-      // 'question' type - mechanism questioning
-      return `Understand the player's feedback about game mechanics and generate an event that reflects the adjustment to the game world. Update context fields according to the player's suggestions.`;
-    }
   }
 
   /**
@@ -172,7 +162,7 @@ export class LLMCoreNode extends BaseNode {
       },
       context_changes: {
         type: 'object',
-        description: 'Object containing only the context fields that changed. Each field MUST have {value, type, name, description}. Optional: min, max for numeric bounds. Use null to remove a field.',
+        description: 'Object containing only the context fields that changed. Each field value MUST be either null (to delete) or an object with ALL of these required properties: {value: any, type: "int"|"double"|"string"|"boolean"|"object"|"array", name: string, description?: string, min?: number, max?: number}. NEVER omit the "type" or "name" properties.',
       },
     };
   }

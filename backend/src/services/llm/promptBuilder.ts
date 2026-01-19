@@ -1,37 +1,14 @@
-import { SchemaField, ContextField, PreLogSummary } from '../../types/index.ts';
+import { ContextField, PreLogSummary } from '../../types/index.ts';
 
 /**
- * Build system prompt with schema requirements
- */
-export function buildSystemPrompt(schema: { [key: string]: SchemaField }): string {
-  let schemaDescription = 'You must respond with ONLY valid JSON that follows this exact schema:\n';
-
-  for (const [fieldName, fieldDef] of Object.entries(schema)) {
-    schemaDescription += `- ${fieldName}: ${fieldDef.description} (type: ${fieldDef.type})\n`;
-  }
-
-  schemaDescription += `
-CRITICAL RULES:
-1. Return ONLY the JSON object, nothing else
-2. NO thinking process, NO explanations, NO markdown
-3. Ensure all JSON strings are properly closed with quotes
-4. Do NOT use control characters or special symbols in strings
-5. Your entire response must be valid JSON starting with opening brace and ending with closing brace
-`;
-
-  return schemaDescription;
-}
-
-/**
- * Build user prompt with all context information
+ * Build user prompt with dynamic game state and user input
  */
 export function buildUserPrompt(
-  prompt: string,
   context: { [key: string]: ContextField },
   preLogSummary?: PreLogSummary,
   userInput?: string
 ): string {
-  let userPrompt = `${prompt}\n\n`;
+  let userPrompt = '';
 
   // Add context
   if (context && Object.keys(context).length > 0) {

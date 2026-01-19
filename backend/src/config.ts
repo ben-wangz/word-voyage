@@ -81,12 +81,11 @@ const eventDescriptionGuidance = {
   zh: {
     tokens: rawConfig.llm.eventDescriptionTokensLimit,
     chars: Math.floor(rawConfig.llm.eventDescriptionTokensLimit / 2),
-    description: `生成约 ${rawConfig.llm.eventDescriptionTokensLimit} tokens 的事件描述（约 ${Math.floor(rawConfig.llm.eventDescriptionTokensLimit / 2)} 个汉字）`,
   },
   en: {
     tokens: rawConfig.llm.eventDescriptionTokensLimit,
+    words: Math.floor(rawConfig.llm.eventDescriptionTokensLimit / 4),
     chars: rawConfig.llm.eventDescriptionTokensLimit * 4,
-    description: `Generate event_description with approximately ${rawConfig.llm.eventDescriptionTokensLimit} tokens (~${Math.floor(rawConfig.llm.eventDescriptionTokensLimit / 4)} words or ~${rawConfig.llm.eventDescriptionTokensLimit * 4} characters)`,
   },
 };
 
