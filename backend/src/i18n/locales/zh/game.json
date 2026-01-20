@@ -1,6 +1,6 @@
 {
   "initial": {
-    "eventDescription": "@file:./initialEvent.txt",
+    "userInput": "你在坠毁的飞船中慢慢恢复意识。",
     "summary": "游戏开始。玩家在坠毁的飞船中醒来。",
     "state": {
       "health": {
@@ -23,6 +23,10 @@
         "name": "位置",
         "value": "坠毁的飞船",
         "description": "游戏世界中的当前位置"
+      },
+      "alice_battery": {
+        "name": "爱丽丝电量",
+        "description": "智能手表AI助手的剩余电量百分比"
       }
     }
   }

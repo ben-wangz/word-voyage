@@ -1,6 +1,6 @@
 {
   "initial": {
-    "eventDescription": "@file:./initialEvent.txt",
+    "userInput": "You slowly regain consciousness inside the crashed spacecraft.",
     "summary": "Game starts. Player awakens in a crashed spaceship.",
     "state": {
       "health": {
@@ -23,6 +23,10 @@
         "name": "Location",
         "value": "Crashed Spaceship",
         "description": "Current location in the game world"
+      },
+      "alice_battery": {
+        "name": "Alice's Battery",
+        "description": "Remaining battery percentage of the AI assistant in the smart watch"
       }
     }
   }

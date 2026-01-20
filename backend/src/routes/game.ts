@@ -73,6 +73,14 @@ function createInitialContext(t: (key: string, defaultValue?: string) => string)
         name: t('game:initial.state.location.name', 'Location'),
         description: t('game:initial.state.location.description', 'Current location in the game world'),
       },
+      alice_battery: {
+        value: 35,
+        type: 'int',
+        name: t('game:initial.state.alice_battery.name', "Alice's Battery"),
+        description: t('game:initial.state.alice_battery.description', 'Remaining battery percentage of the AI assistant in the smart watch'),
+        min: 0,
+        max: 100,
+      },
     },
     gameTime: 0,
   };
@@ -98,19 +106,27 @@ gameRouter.post('/start', async (c) => {
 
     const initialContext = createInitialContext(t);
 
+    // Use LLM to generate initial event
+    const llmNode = new LLMCoreNode();
+    const request = {
+      userInput: t('game:initial.userInput', 'You slowly regain consciousness inside the crashed spacecraft.'),
+      inputType: 'action' as const,
+      language: session.language || 'en',
+      preLogSummary: undefined,
+    };
+
+    // Generate initial event using LLM
+    await llmNode.process(request, initialContext, async () => {});
+
+    const generatedEvent = (request as any).event;
+
     const initialStep: Step = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
       userInput: '[GAME_START]',
       inputType: 'action',
       context: initialContext,
-      event: {
-        description: t(
-          'game:initial.eventDescription',
-          'Your spacecraft crashes during an emergency landing on an unknown planet. Alarms blare inside the cabin, and oxygen levels are dropping. You must find a way to survive and escape this desolate world.',
-        ),
-        contextChanges: {},
-      },
+      event: generatedEvent,
       preLogSummary: {
         summary: t('game:initial.summary', 'Game starts. Player awakens in a crashed spaceship.'),
         recentEvents: [],
