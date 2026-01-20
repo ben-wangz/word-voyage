@@ -224,9 +224,6 @@ Context {
   state: {
     [key: string]: ContextField;
   };
-
-  // 游戏时间
-  gameTime: number;  // 游戏内时间戳（秒）
 }
 
 // Context 字段定义（精简结构）

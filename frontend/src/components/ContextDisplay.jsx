@@ -57,9 +57,6 @@ export function ContextDisplay({ context }) {
           })}
         </tbody>
       </table>
-      <div className="game-time">
-        {t('context.gameTime')}{Math.floor((context.gameTime || 0) / 3600)} hours
-      </div>
     </div>
   );
 }

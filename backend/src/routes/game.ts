@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { ProcessingChain } from '../core/processingChain.ts';
 import { InputProcessingNode } from '../nodes/inputProcessingNode.ts';
-import { TimeManagementNode } from '../nodes/timeManagementNode.ts';
 import { StateManagementNode } from '../nodes/stateManagementNode.ts';
 import { PreLogSummaryNode } from '../nodes/preLogSummaryNode.ts';
 import { LLMCoreNode } from '../nodes/llmCoreNode.ts';
@@ -19,7 +18,6 @@ function createProcessingChain(): ProcessingChain {
 
   // Preprocessing stage
   chain.register(new InputProcessingNode());
-  chain.register(new TimeManagementNode());
   chain.register(new StateManagementNode());
   chain.register(new PreLogSummaryNode());
 
@@ -82,7 +80,6 @@ function createInitialContext(t: (key: string, defaultValue?: string) => string)
         max: 100,
       },
     },
-    gameTime: 0,
   };
 }
 

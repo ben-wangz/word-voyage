@@ -48,13 +48,11 @@ def test_process_action_step(client: BackendGameClient, result: TestResult):
         # Validate context
         context = step.get('context', {})
         assert 'state' in context, "Expected state in context"
-        assert 'gameTime' in context, "Expected gameTime in context"
 
         state = context.get('state', {})
         assert len(state) > 0, "Expected state to have at least one field"
 
         print(f"  Context fields: {list(state.keys())}")
-        print(f"  Game time: {context.get('gameTime')}")
 
         # Validate event
         event = step.get('event', {})
@@ -161,7 +159,7 @@ def test_multiple_steps_sequential(client: BackendGameClient, result: TestResult
             assert 'step' in response, f"Step {i+1}: Expected step in response"
             step = response.get('step')
 
-            print(f"  Step {i+1}: {step.get('id')[:8]}... (game time: {step.get('context', {}).get('gameTime')})")
+            print(f"  Step {i+1}: {step.get('id')[:8]}...")
 
             # Verify each step has required fields
             assert 'context' in step, f"Step {i+1}: Expected context"

@@ -10,8 +10,7 @@
   },
   "context": {
     "title": "Game State",
-    "empty": "No context",
-    "gameTime": "Game Time: "
+    "empty": "No context"
   },
   "event": {
     "waiting": "Waiting for first event...",

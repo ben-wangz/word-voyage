@@ -225,7 +225,7 @@ export function GamePage() {
       <main className="game-main">
         <div className="left-panel">
           {renderContextGrid()}
-          <EventDisplay event={currentStep?.event} isLoading={loading} gameTime={context?.gameTime} />
+          <EventDisplay event={currentStep?.event} isLoading={loading} />
           <InputForm onSubmit={handleSubmitInput} disabled={loading} />
         </div>
 

@@ -16,7 +16,6 @@ export interface Step {
   inputType: 'action' | 'question';
   context: {
     state: Record<string, ContextField>;
-    gameTime: number;
   };
   event: {
     description: string;

@@ -27,12 +27,9 @@ def test_get_current_context(client: BackendGameClient, result: TestResult):
 
         context = response.get('context', {})
         assert 'state' in context, "Expected state in context"
-        assert 'gameTime' in context, "Expected gameTime in context"
 
         state = context.get('state', {})
-        game_time = context.get('gameTime')
 
-        print(f"  Game time: {game_time}")
         print(f"  Context fields: {len(state)}")
         for key in state:
             field_data = state[key]
@@ -88,7 +85,6 @@ def test_get_step_history(client: BackendGameClient, result: TestResult):
                 print(f"\n  Step {idx+1}:")
                 print(f"    ID: {step.get('id')[:8]}...")
                 print(f"    Input: {step.get('userInput')}")
-                print(f"    Game Time: {step.get('context', {}).get('gameTime')}")
                 print(f"    Event: {step.get('event', {}).get('description', '')[:60]}...")
 
         print(f"\n  ✓ Step history retrieved successfully ({len(steps)} steps)")

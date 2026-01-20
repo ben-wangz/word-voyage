@@ -42,7 +42,6 @@ def test_start_game(client: BackendGameClient, result: TestResult):
         # Validate initial context
         context = step.get('context', {})
         assert 'state' in context, "Expected state in context"
-        assert 'gameTime' in context, "Expected gameTime in context"
 
         state = context.get('state', {})
         required_fields = ['health', 'hunger', 'thirst', 'energy', 'location']
@@ -53,7 +52,6 @@ def test_start_game(client: BackendGameClient, result: TestResult):
             assert 'type' in field_data, f"Expected type in {field}"
 
         print(f"\n  Initial context fields: {list(state.keys())}")
-        print(f"  Game time: {context.get('gameTime')}")
 
         # Validate event
         event = step.get('event', {})

@@ -10,8 +10,7 @@
   },
   "context": {
     "title": "游戏状态",
-    "empty": "暂无上下文",
-    "gameTime": "游戏时间: "
+    "empty": "暂无上下文"
   },
   "event": {
     "waiting": "等待第一个事件...",

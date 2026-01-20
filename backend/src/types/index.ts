@@ -21,7 +21,6 @@ export interface Context {
   state: {
     [key: string]: ContextField;
   };
-  gameTime: number; // In-game timestamp (seconds)
 }
 
 /**
